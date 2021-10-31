@@ -4,12 +4,17 @@
 [ExecuteInEditMode]
 public class ResolutionSwapBehavior : MonoBehaviour
 {
-    private const int RENDER_WIDTH = 480, RENDER_HEIGHT = 270;
+    private const int RENDER_WIDTH = 270, RENDER_HEIGHT = 480;
     private const int REF_PPU = 24;
 
     private void OnEnable()
     {
         this.GetComponent<Camera>().orthographicSize = ((float)RENDER_HEIGHT / (float)REF_PPU) * 0.5f;
+    }
+
+    private void Start()
+    {
+        Screen.SetResolution(RENDER_WIDTH, RENDER_HEIGHT, false);
     }
 
     private void Update()
