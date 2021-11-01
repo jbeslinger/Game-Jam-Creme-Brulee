@@ -5,6 +5,10 @@ using UnityEngine;
 
 public class GameBoardBehavior : MonoBehaviour
 {
+    #region Enums
+    public enum PushDirection { UP, RIGHT, DOWN, LEFT };
+    #endregion
+
     #region Consts
     private const int BOARD_SIZE = 8;
     private const int POINT_REWARD = 200;
@@ -17,6 +21,8 @@ public class GameBoardBehavior : MonoBehaviour
     #region Members
     [SerializeField]
     private GameObject _piecePrefab;
+
+    private List<GameObject> _previewObjects = new List<GameObject>();
     #endregion
 
     #region Unity Methods
@@ -35,32 +41,26 @@ public class GameBoardBehavior : MonoBehaviour
             GenerateNewBoard();
         }
     }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Z))
-            GenerateNewBoard();
-    }
     #endregion
 
     #region Methods
-    public void SwapPieces(GameObject pieceA, GameObject pieceB)
+    public void PushPieces(GameObject pieceA, GameObject pieceB, PushDirection pushDir)
     {
+        /*
         (int, int) idxA = IndexOf(pieceA);
         (int, int) idxB = IndexOf(pieceB);
-        
         Vector2 offset = this.gameObject.transform.position;
         Vector2 posA = new Vector2(idxA.Item1, -idxA.Item2) + offset;
         Vector2 posB = new Vector2(idxB.Item1, -idxB.Item2) + offset;
-
         this.pieces[idxA.Item1, idxA.Item2] = pieceB;
         this.pieces[idxB.Item1, idxB.Item2] = pieceA;
-
         pieceA.GetComponent<PieceBehavior>().MoveTo(posB);
         pieceB.GetComponent<PieceBehavior>().MoveTo(posA);
-
         //pieceA.transform.position = posB;
         //pieceB.transform.position = posA;
+        */
+
+        // TODO: Implement
     }
 
     public (int, int) IndexOf(GameObject piece)
@@ -76,6 +76,24 @@ public class GameBoardBehavior : MonoBehaviour
             }
         }
         return (-1, -1);
+    }
+
+    /// <summary>
+    /// Plays a preview animation of where the bubbles are going to move if the player pushes them.
+    /// </summary>
+    /// <param name="pieceToPush"></param>
+    /// <param name="pushDir"></param>
+    public void PreviewPlacement(GameObject pieceToPush, PushDirection pushDir)
+    {
+        // TODO: Implement
+    }
+
+    /// <summary>
+    /// Cancels the current preview.
+    /// </summary>
+    public void RemovePreviewPlacement()
+    {
+        // TODO: Implement
     }
 
     /// <summary>
@@ -115,6 +133,9 @@ public class GameBoardBehavior : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Clears the board and destroys all piece GameObjects.
+    /// </summary>
     private void ClearBoard()
     {
         if (this.pieces != null)

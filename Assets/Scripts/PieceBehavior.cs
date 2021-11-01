@@ -9,7 +9,7 @@ public class PieceBehavior : MonoBehaviour
 {
     #region Enums
     public enum PieceType { RED, ORA, YEL, GRE, BLU, PUR, WHI };
-    public enum PieceState { STILL, GRABBED, MOVING, POPPED };
+    public enum PieceState { SITTING, GRABBED, MOVING, POPPED };
     #endregion
 
     #region Consts
@@ -29,7 +29,7 @@ public class PieceBehavior : MonoBehaviour
     private SpriteRenderer _sr;
     private Collider2D _cd;
 
-    private PieceState _state = PieceState.STILL;
+    private PieceState _state = PieceState.SITTING;
 
     private Vector2 _targetPos;
     private float _startTime;
@@ -71,7 +71,7 @@ public class PieceBehavior : MonoBehaviour
     {
         switch (State)
         {
-            case PieceState.STILL:
+            case PieceState.SITTING:
                 break;
             case PieceState.GRABBED:
                 break;
@@ -84,7 +84,7 @@ public class PieceBehavior : MonoBehaviour
                 }
                 else
                 {
-                    ChangeState(PieceState.STILL);
+                    ChangeState(PieceState.SITTING);
                 }
                 break;
             case PieceState.POPPED:
@@ -115,7 +115,7 @@ public class PieceBehavior : MonoBehaviour
         this._state = newState;
         switch (this.State)
         {
-            case PieceState.STILL:
+            case PieceState.SITTING:
                 _cd.enabled = true;
                 break;
             case PieceState.GRABBED:
