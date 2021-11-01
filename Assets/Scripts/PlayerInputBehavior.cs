@@ -68,7 +68,10 @@ public class PlayerInputBehavior : MonoBehaviour
             }
             else
             {
-                _selectedObj.GetComponent<PieceBehavior>().MoveTo(_lastPosition);
+                if (_selectedObj != null)
+                {
+                    _selectedObj.GetComponent<PieceBehavior>().MoveTo(_lastPosition);
+                }
             }
             _selectedObj = null;
             _objToReplace = null;

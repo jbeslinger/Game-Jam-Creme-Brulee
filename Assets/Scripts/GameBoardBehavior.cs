@@ -7,6 +7,7 @@ public class GameBoardBehavior : MonoBehaviour
 {
     #region Consts
     private const int BOARD_SIZE = 8;
+    private const int POINT_REWARD = 200;
     #endregion
 
     #region Fields
@@ -71,6 +72,9 @@ public class GameBoardBehavior : MonoBehaviour
         return (-1, -1);
     }
 
+    /// <summary>
+    /// Generate a new board and guarantee there will be at most 2 pieces of same color touching.
+    /// </summary>
     private void GenerateNewBoard()
     {
         ClearBoard();
@@ -80,6 +84,7 @@ public class GameBoardBehavior : MonoBehaviour
             for (int c = 0; c < BOARD_SIZE; c++)
             {
                 GameObject newPiece = GameObject.Instantiate(_piecePrefab, this.transform);
+                newPiece.GetComponent<PieceBehavior>().type = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
                 newPiece.transform.position = new Vector2(r, -c) + offset;
                 this.pieces[r, c] = newPiece;
             }
@@ -89,6 +94,112 @@ public class GameBoardBehavior : MonoBehaviour
     private void ClearBoard()
     {
         this.pieces = new GameObject[BOARD_SIZE, BOARD_SIZE];
+    }
+
+    /// <summary>
+    /// Check entire board for valid matches, then build and return a MatchResult.
+    /// </summary>
+    /// <returns></returns>
+    private MatchResult GetMatches()
+    {
+        // TODO: implement
+        MatchResult result = new MatchResult();
+        return result;
+    }
+
+    /// <summary>
+    /// Returns the GameObject above the supplied piece. Returns null if OOB.
+    /// </summary>
+    /// <param name="piece"></param>
+    private GameObject UpOf(GameObject piece)
+    {
+        GameObject result = null;
+        (int, int) idx = IndexOf(piece);
+        idx.Item2 -= 1;
+        if (idx.Item2 >= 0)
+        {
+            result = pieces[idx.Item1, idx.Item2];
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Returns the GameObject to the right of the supplied piece. Returns null if OOB.
+    /// </summary>
+    /// <param name="piece"></param>
+    private GameObject RightOf(GameObject piece)
+    {
+        GameObject result = null;
+        (int, int) idx = IndexOf(piece);
+        idx.Item1 += 1;
+        if (idx.Item1 < BOARD_SIZE)
+        {
+            result = pieces[idx.Item1, idx.Item2];
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Returns the GameObject to the left of the supplied piece. Returns null if OOB.
+    /// </summary>
+    /// <param name="piece"></param>
+    private GameObject LeftOf(GameObject piece)
+    {
+        GameObject result = null;
+        (int, int) idx = IndexOf(piece);
+        idx.Item1 -= 1;
+        if (idx.Item1 >= 0)
+        {
+            result = pieces[idx.Item1, idx.Item2];
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Returns the GameObject below the supplied piece. Returns null if OOB.
+    /// </summary>
+    /// <param name="piece"></param>
+    private GameObject DownOf(GameObject piece)
+    {
+        GameObject result = null;
+        (int, int) idx = IndexOf(piece);
+        idx.Item2 += 1;
+        if (idx.Item2 < BOARD_SIZE)
+        {
+            result = pieces[idx.Item1, idx.Item2];
+        }
+        return result;
+    }
+    #endregion
+
+    #region Subclasses
+    /// <summary>
+    /// This class will tell the GameBoard whether or not the player just made a valid move
+    /// </summary>
+    private class MatchResult
+    {
+        #region Properties
+        public bool Valid { get => Matches.Count > 0; }
+        public List<GameObject[]> Matches { get => _matches; }
+        #endregion
+
+        #region Members
+        private List<GameObject[]> _matches;
+        #endregion
+
+        #region Constructors
+        public MatchResult()
+        {
+            _matches = new List<GameObject[]>();
+        }
+        #endregion
+
+        #region Methods
+        public void AddMatch(GameObject[] pieces)
+        {
+            _matches.Add(pieces);
+        }
+        #endregion
     }
     #endregion
 }

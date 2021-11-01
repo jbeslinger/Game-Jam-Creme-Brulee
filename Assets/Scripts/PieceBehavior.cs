@@ -41,7 +41,31 @@ public class PieceBehavior : MonoBehaviour
     {
         _sr = GetComponent<SpriteRenderer>();
         _cd = GetComponent<Collider2D>();
-        SetRandomColor();
+
+        Color pieceColor = Color.white;
+        switch (this.type)
+        {
+            case PieceType.RED:
+                pieceColor = Color.red;
+                break;
+            case PieceType.ORA:
+                pieceColor = new Color(1.0f, 0.5f, 0.0f);
+                break;
+            case PieceType.YEL:
+                pieceColor = Color.yellow;
+                break;
+            case PieceType.GRE:
+                pieceColor = Color.green;
+                break;
+            case PieceType.BLU:
+                pieceColor = Color.blue;
+                break;
+            case PieceType.PUR:
+                pieceColor = Color.blue + Color.red;
+                break;
+        }
+        _sr.color = pieceColor;
+
         this.gameObject.name = this.ToString();
     }
 
@@ -86,34 +110,6 @@ public class PieceBehavior : MonoBehaviour
     public override string ToString()
     {
         return "Piece [" + type.ToString() + "]";
-    }
-
-    private void SetRandomColor()
-    {
-        this.type = (PieceType)UnityEngine.Random.Range(0, 7);
-        Color pieceColor = Color.white;
-        switch (this.type)
-        {
-            case PieceType.RED:
-                pieceColor = Color.red;
-                break;
-            case PieceType.ORA:
-                pieceColor = new Color(1.0f, 0.5f, 0.0f);
-                break;
-            case PieceType.YEL:
-                pieceColor = Color.yellow;
-                break;
-            case PieceType.GRE:
-                pieceColor = Color.green;
-                break;
-            case PieceType.BLU:
-                pieceColor = Color.blue;
-                break;
-            case PieceType.PUR:
-                pieceColor = Color.blue + Color.red;
-                break;
-        }
-        _sr.color = pieceColor;
     }
 
     private void ChangeState(PieceState newState)
