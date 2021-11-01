@@ -35,6 +35,12 @@ public class GameBoardBehavior : MonoBehaviour
             GenerateNewBoard();
         }
     }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Z))
+            GenerateNewBoard();
+    }
     #endregion
 
     #region Methods
@@ -84,27 +90,44 @@ public class GameBoardBehavior : MonoBehaviour
             for (int c = 0; c < BOARD_SIZE; c++)
             {
                 GameObject newPiece = GameObject.Instantiate(_piecePrefab, this.transform);
-                newPiece.GetComponent<PieceBehavior>().type = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
-                newPiece.transform.position = new Vector2(r, -c) + offset;
                 this.pieces[r, c] = newPiece;
+                newPiece.transform.position = new Vector2(r, -c) + offset;
+
+                PieceBehavior newPieceBehavior = newPiece.GetComponent<PieceBehavior>();
+                newPieceBehavior.pieceType = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
+
+                newPiece.name = newPieceBehavior.ToString();
             }
+        }
+
+        // Check for pre-emptive matches, fix them, and check until none are left
+        MatchResult result = GetMatches();
+        while (result.Valid)
+        {
+            foreach (List<GameObject> match in result.Matches)
+            {
+                foreach (GameObject piece in match)
+                {
+                    piece.GetComponent<PieceBehavior>().pieceType = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
+                }
+            }
+            result = GetMatches();
         }
     }
 
     private void ClearBoard()
     {
+        if (this.pieces != null)
+        {
+            for (int r = 0; r < BOARD_SIZE; r++)
+            {
+                for (int c = 0; c < BOARD_SIZE; c++)
+                {
+                    GameObject.Destroy(this.pieces[r, c]);
+                }
+            }
+        }
         this.pieces = new GameObject[BOARD_SIZE, BOARD_SIZE];
-    }
-
-    /// <summary>
-    /// Check entire board for valid matches, then build and return a MatchResult.
-    /// </summary>
-    /// <returns></returns>
-    private MatchResult GetMatches()
-    {
-        // TODO: implement
-        MatchResult result = new MatchResult();
-        return result;
     }
 
     /// <summary>
@@ -170,6 +193,70 @@ public class GameBoardBehavior : MonoBehaviour
         }
         return result;
     }
+
+    /// <summary>
+    /// Check entire board for valid matches, then build and return a MatchResult.
+    /// </summary>
+    /// <returns></returns>
+    private MatchResult GetMatches()
+    {
+        MatchResult result = new MatchResult();
+        int[,] map = new int[BOARD_SIZE, BOARD_SIZE]; // Empty int map to keep track of where we checked
+
+        List<GameObject> potentialMatch = new List<GameObject>();
+
+        for (int r = 0; r < BOARD_SIZE; r++)
+        {
+            for (int c = 0; c < BOARD_SIZE; c++)
+            {
+                potentialMatch = CheckPiece(pieces[r, c], map);
+                if (potentialMatch.Count >= 3)
+                {
+                    result.AddMatch(potentialMatch);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Recursive method to check all cardinal directions of provided piece and return a list of matching colors.
+    /// </summary>
+    /// <param name="piece"></param>
+    /// <returns></returns>
+    private List<GameObject> CheckPiece(GameObject piece, int[,] map)
+    {
+        List<GameObject> piecesOfSameType = new List<GameObject>();
+        (int, int) idx = IndexOf(piece);
+        if (map[idx.Item1, idx.Item2] == 0)
+        {
+            map[idx.Item1, idx.Item2] = 1;
+            PieceBehavior.PieceType myType = piece.GetComponent<PieceBehavior>().pieceType;
+            piecesOfSameType.Add(piece);
+            GameObject upPiece = UpOf(piece);
+            if (upPiece != null && upPiece.GetComponent<PieceBehavior>().pieceType == myType)
+            {
+                piecesOfSameType.AddRange(CheckPiece(upPiece, map));
+            }
+            GameObject rightPiece = RightOf(piece);
+            if (rightPiece != null && rightPiece.GetComponent<PieceBehavior>().pieceType == myType)
+            {
+                piecesOfSameType.AddRange(CheckPiece(rightPiece, map));
+            }
+            GameObject downPiece = DownOf(piece);
+            if (downPiece != null && downPiece.GetComponent<PieceBehavior>().pieceType == myType)
+            {
+                piecesOfSameType.AddRange(CheckPiece(downPiece, map));
+            }
+            GameObject leftPiece = LeftOf(piece);
+            if (leftPiece != null && leftPiece.GetComponent<PieceBehavior>().pieceType == myType)
+            {
+                piecesOfSameType.AddRange(CheckPiece(leftPiece, map));
+            }
+        }
+        return piecesOfSameType;
+    }
     #endregion
 
     #region Subclasses
@@ -180,22 +267,22 @@ public class GameBoardBehavior : MonoBehaviour
     {
         #region Properties
         public bool Valid { get => Matches.Count > 0; }
-        public List<GameObject[]> Matches { get => _matches; }
+        public List<List<GameObject>> Matches { get => _matches; }
         #endregion
 
         #region Members
-        private List<GameObject[]> _matches;
+        private List<List<GameObject>> _matches;
         #endregion
 
         #region Constructors
         public MatchResult()
         {
-            _matches = new List<GameObject[]>();
+            _matches = new List<List<GameObject>>();
         }
         #endregion
 
         #region Methods
-        public void AddMatch(GameObject[] pieces)
+        public void AddMatch(List<GameObject> pieces)
         {
             _matches.Add(pieces);
         }

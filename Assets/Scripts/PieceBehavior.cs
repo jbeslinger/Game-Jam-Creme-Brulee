@@ -21,7 +21,7 @@ public class PieceBehavior : MonoBehaviour
     #endregion
 
     #region Fields
-    public PieceType type = PieceType.WHI;
+    public PieceType pieceType = PieceType.WHI;
     public bool hardened = false;
     #endregion
 
@@ -43,7 +43,7 @@ public class PieceBehavior : MonoBehaviour
         _cd = GetComponent<Collider2D>();
 
         Color pieceColor = Color.white;
-        switch (this.type)
+        switch (this.pieceType)
         {
             case PieceType.RED:
                 pieceColor = Color.red;
@@ -65,8 +65,6 @@ public class PieceBehavior : MonoBehaviour
                 break;
         }
         _sr.color = pieceColor;
-
-        this.gameObject.name = this.ToString();
     }
 
     private void Update()
@@ -109,7 +107,7 @@ public class PieceBehavior : MonoBehaviour
 
     public override string ToString()
     {
-        return "Piece [" + type.ToString() + "]";
+        return "Piece [" + pieceType.ToString() + "]";
     }
 
     private void ChangeState(PieceState newState)
