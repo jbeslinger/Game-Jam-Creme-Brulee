@@ -114,6 +114,7 @@ public class PieceBehavior : MonoBehaviour
                 }
                 break;
             case PieceState.POPPED:
+                /* TEMPORARY */ gameObject.SetActive(false);
                 break;
             case PieceState.PREVIEW:
                 {

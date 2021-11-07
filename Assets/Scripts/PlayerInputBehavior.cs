@@ -87,7 +87,6 @@ public class PlayerInputBehavior : MonoBehaviour
                 if (_objUnderCursor != null)
                 {
                     /* DEBUG */ _selectedObj.GetComponent<PieceBehavior>().MoveTo(_lastPosition);
-                    //_gb.PushPieces(_selectedObj, _objUnderCursor);
                 }
                 else
                 {

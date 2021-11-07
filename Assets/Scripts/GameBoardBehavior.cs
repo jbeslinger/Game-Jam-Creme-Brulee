@@ -21,7 +21,7 @@ public class GameBoardBehavior : MonoBehaviour
     #region Members
     [SerializeField]
     private GameObject _piecePrefab;
-
+    
     private List<GameObject> _previewObjects = new List<GameObject>();
     #endregion
 
@@ -63,25 +63,11 @@ public class GameBoardBehavior : MonoBehaviour
     #endregion
 
     #region Methods
-    public void PushPieces(GameObject pieceA, GameObject pieceB, PushDirection pushDir)
-    {
-        /*
-        (int, int) idxA = IndexOf(pieceA);
-        (int, int) idxB = IndexOf(pieceB);
-        Vector2 offset = this.gameObject.transform.position;
-        Vector2 posA = new Vector2(idxA.Item1, -idxA.Item2) + offset;
-        Vector2 posB = new Vector2(idxB.Item1, -idxB.Item2) + offset;
-        this.pieces[idxA.Item1, idxA.Item2] = pieceB;
-        this.pieces[idxB.Item1, idxB.Item2] = pieceA;
-        pieceA.GetComponent<PieceBehavior>().MoveTo(posB);
-        pieceB.GetComponent<PieceBehavior>().MoveTo(posA);
-        //pieceA.transform.position = posB;
-        //pieceB.transform.position = posA;
-        */
-
-        // TODO: Implement
-    }
-
+    /// <summary>
+    /// Returns the x and y index of the provided piece.
+    /// </summary>
+    /// <param name="piece"></param>
+    /// <returns></returns>
     public (int, int) IndexOf(GameObject piece)
     {
         for (int r = 0; r < BOARD_SIZE; r++)
@@ -277,6 +263,44 @@ public class GameBoardBehavior : MonoBehaviour
     }
 
     /// <summary>
+    /// Recursive method to check all cardinal directions of provided piece and return a list of matching colors.
+    /// </summary>
+    /// <param name="piece"></param>
+    /// <returns></returns>
+    private List<GameObject> CheckPiece(GameObject piece, int[,] map)
+    {
+        List<GameObject> piecesOfSameType = new List<GameObject>();
+        (int, int) idx = IndexOf(piece);
+        if (map[idx.Item1, idx.Item2] == 0)
+        {
+            map[idx.Item1, idx.Item2] = 1;
+            PieceBehavior.PieceType myType = piece.GetComponent<PieceBehavior>().Type;
+            piecesOfSameType.Add(piece);
+            GameObject upPiece = UpOf(piece);
+            if (upPiece != null && upPiece.GetComponent<PieceBehavior>().Type == myType)
+            {
+                piecesOfSameType.AddRange(CheckPiece(upPiece, map));
+            }
+            GameObject rightPiece = RightOf(piece);
+            if (rightPiece != null && rightPiece.GetComponent<PieceBehavior>().Type == myType)
+            {
+                piecesOfSameType.AddRange(CheckPiece(rightPiece, map));
+            }
+            GameObject downPiece = DownOf(piece);
+            if (downPiece != null && downPiece.GetComponent<PieceBehavior>().Type == myType)
+            {
+                piecesOfSameType.AddRange(CheckPiece(downPiece, map));
+            }
+            GameObject leftPiece = LeftOf(piece);
+            if (leftPiece != null && leftPiece.GetComponent<PieceBehavior>().Type == myType)
+            {
+                piecesOfSameType.AddRange(CheckPiece(leftPiece, map));
+            }
+        }
+        return piecesOfSameType;
+    }
+
+    /// <summary>
     /// Recursive method that finds the quickest path to the empty space for the bubble to fill.
     /// </summary>
     /// <param name="start"></param>
@@ -316,47 +340,45 @@ public class GameBoardBehavior : MonoBehaviour
             pathVar.Pop();
         }
     }
-
-    /// <summary>
-    /// Recursive method to check all cardinal directions of provided piece and return a list of matching colors.
-    /// </summary>
-    /// <param name="piece"></param>
-    /// <returns></returns>
-    private List<GameObject> CheckPiece(GameObject piece, int[,] map)
-    {
-        List<GameObject> piecesOfSameType = new List<GameObject>();
-        (int, int) idx = IndexOf(piece);
-        if (map[idx.Item1, idx.Item2] == 0)
-        {
-            map[idx.Item1, idx.Item2] = 1;
-            PieceBehavior.PieceType myType = piece.GetComponent<PieceBehavior>().Type;
-            piecesOfSameType.Add(piece);
-            GameObject upPiece = UpOf(piece);
-            if (upPiece != null && upPiece.GetComponent<PieceBehavior>().Type == myType)
-            {
-                piecesOfSameType.AddRange(CheckPiece(upPiece, map));
-            }
-            GameObject rightPiece = RightOf(piece);
-            if (rightPiece != null && rightPiece.GetComponent<PieceBehavior>().Type == myType)
-            {
-                piecesOfSameType.AddRange(CheckPiece(rightPiece, map));
-            }
-            GameObject downPiece = DownOf(piece);
-            if (downPiece != null && downPiece.GetComponent<PieceBehavior>().Type == myType)
-            {
-                piecesOfSameType.AddRange(CheckPiece(downPiece, map));
-            }
-            GameObject leftPiece = LeftOf(piece);
-            if (leftPiece != null && leftPiece.GetComponent<PieceBehavior>().Type == myType)
-            {
-                piecesOfSameType.AddRange(CheckPiece(leftPiece, map));
-            }
-        }
-        return piecesOfSameType;
-    }
     #endregion
 
     #region Subclasses
+    private class BoardMove
+    {
+        #region Members
+        /// <summary>
+        /// Each layer contains a reference to a piece, the direction it was pushed,
+        /// and its original location.
+        /// </summary>
+        private readonly Stack<(GameObject, PushDirection, Vector2)> _moves = new Stack<(GameObject, PushDirection, Vector2)>();
+        #endregion
+
+        #region Constructors
+        public BoardMove(Stack<(GameObject, PushDirection, Vector2)> moves)
+        {
+            _moves = moves;
+        }
+        #endregion
+
+        #region Methods
+        /// <summary>
+        /// Calls MoveTo() on each piece in _moves.
+        /// </summary>
+        public void Execute()
+        {
+            //  TODO: Implement
+        }
+
+        /// <summary>
+        /// Calls MoveTo() on each piece with its original location. Also brings pieces back from the dead.
+        /// </summary>
+        public void UndoExecution()
+        {
+            //  TODO: Implement
+        }
+        #endregion
+    }
+
     /// <summary>
     /// This class will tell the GameBoard whether or not the player just made a valid move
     /// </summary>
@@ -386,6 +408,10 @@ public class GameBoardBehavior : MonoBehaviour
         #endregion
     }
 
+    /// <summary>
+    /// This class is used in pathfinding as a easily readible way of keeping track
+    /// what paths have already been traversed.
+    /// </summary>
     private class BoardMap
     {
         #region Members
