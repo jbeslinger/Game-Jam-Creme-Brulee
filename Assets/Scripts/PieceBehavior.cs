@@ -179,13 +179,13 @@ public class PieceBehavior : MonoBehaviour
                 targetPos.y += units;
                 break;
             case GameBoardBehavior.PushDirection.RIGHT:
-                targetPos.y += units;
+                targetPos.x += units;
                 break;
             case GameBoardBehavior.PushDirection.DOWN:
                 targetPos.y -= units;
                 break;
             case GameBoardBehavior.PushDirection.LEFT:
-                targetPos.y -= units;
+                targetPos.x -= units;
                 break;
         }
         _arrowPointTo = targetDir;
@@ -220,7 +220,7 @@ public class PieceBehavior : MonoBehaviour
                 degrees = 270.0f;
                 break;
         }
-        _arrowIndicator.transform.Rotate(new Vector3(0.0f, 0.0f, degrees));
+        _arrowIndicator.transform.rotation = Quaternion.Euler(0.0f, 0.0f, degrees);
     }
 
     public override string ToString()

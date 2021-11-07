@@ -97,7 +97,7 @@ public class GameBoardBehavior : MonoBehaviour
         return (-1, -1);
     }
 
-    private Queue<(GameObject, PushDirection)> pathToEmptySpot;
+    private Stack<(GameObject, PushDirection)> pathToEmptySpot;
     /// <summary>
     /// Plays a preview animation of where the bubbles are going to move if the player pushes them.
     /// </summary>
@@ -105,16 +105,16 @@ public class GameBoardBehavior : MonoBehaviour
     /// <param name="pushDir"></param>
     public void PreviewPlacement(GameObject pieceToPlace, GameObject pieceToPush, PushDirection pushDir)
     {
-        Queue<(GameObject, PushDirection)> temp = new Queue<(GameObject, PushDirection)>(); // Var to hold our path to the end; runs backwards
+        Stack<(GameObject, PushDirection)> temp = new Stack<(GameObject, PushDirection)>(); // Var to hold our path to the end; runs backwards
         bool foundFlag = false; // Temp reference variable to tell the method we found the end
         FindPath(pieceToPush, pieceToPlace, pushDir, temp, new BoardMap(), ref foundFlag);
         
         // Clone the steps for later use
-        pathToEmptySpot = new Queue<(GameObject, PushDirection)>(new Queue<(GameObject, PushDirection)>(temp));
+        pathToEmptySpot = new Stack<(GameObject, PushDirection)>(new Stack<(GameObject, PushDirection)>(temp));
 
         while (temp.Count != 0)
         {
-            (GameObject, PushDirection) piece = temp.Dequeue();
+            (GameObject, PushDirection) piece = temp.Pop();
             PieceBehavior pieceBehavior = piece.Item1.GetComponent<PieceBehavior>();
             pieceBehavior.PreviewMoveTo(piece.Item2, 0.5f);
         }
@@ -127,7 +127,7 @@ public class GameBoardBehavior : MonoBehaviour
     {
         while (pathToEmptySpot.Count != 0)
         {
-            (GameObject, PushDirection) piece = pathToEmptySpot.Dequeue();
+            (GameObject, PushDirection) piece = pathToEmptySpot.Pop();
             PieceBehavior pieceBehavior = piece.Item1.GetComponent<PieceBehavior>();
             pieceBehavior.RemovePreview();
         }
@@ -283,7 +283,7 @@ public class GameBoardBehavior : MonoBehaviour
     /// <param name="end"></param>
     /// <param name="pathVar"></param>
     /// <returns></returns>
-    private void FindPath(GameObject start, GameObject end, PushDirection pushDir, Queue<(GameObject, PushDirection)> pathVar, BoardMap tempMap, ref bool foundFlag)
+    private void FindPath(GameObject start, GameObject end, PushDirection pushDir, Stack<(GameObject, PushDirection)> pathVar, BoardMap tempMap, ref bool foundFlag)
     {
         (int,int) startIndex = IndexOf(start);
         tempMap.Mark(startIndex);
@@ -300,20 +300,20 @@ public class GameBoardBehavior : MonoBehaviour
             GameObject next = null;
             for (int i = 0; i < 4; i++)
             {
-                     if (((int)pushDir + i) % 4 == 0) { next = UpOf(start); pushDir = PushDirection.UP; }
-                else if (((int)pushDir + i) % 4 == 1) { next = RightOf(start); pushDir = PushDirection.RIGHT; }
-                else if (((int)pushDir + i) % 4 == 2) { next = DownOf(start); pushDir = PushDirection.DOWN; }
-                else if (((int)pushDir + i) % 4 == 3) { next = LeftOf(start); pushDir = PushDirection.LEFT; }
+                     if (((int)pushDir + i) % 4 == 0) { next = UpOf(start);     pushDir = PushDirection.UP; }
+                else if (((int)pushDir + i) % 4 == 1) { next = RightOf(start);  pushDir = PushDirection.RIGHT; }
+                else if (((int)pushDir + i) % 4 == 2) { next = DownOf(start);   pushDir = PushDirection.DOWN; }
+                else if (((int)pushDir + i) % 4 == 3) { next = LeftOf(start);   pushDir = PushDirection.LEFT; }
                 if (next != null && tempMap.IsUnmarked(IndexOf(next)) && !foundFlag)
                 {
-                    pathVar.Enqueue((start, pushDir));
+                    pathVar.Push((start, pushDir));
                     FindPath(next, end, pushDir, pathVar, tempMap, ref foundFlag);
                 }
             }
         }
         if (!foundFlag)
         {
-            pathVar.Dequeue();
+            pathVar.Pop();
         }
     }
 
