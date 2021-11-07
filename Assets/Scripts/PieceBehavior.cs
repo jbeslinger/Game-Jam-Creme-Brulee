@@ -3,13 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(SpriteRenderer))]
 [RequireComponent(typeof(Collider2D))]
 public class PieceBehavior : MonoBehaviour
 {
     #region Enums
     public enum PieceType { RED, ORA, YEL, GRE, BLU, PUR, WHI };
-    public enum PieceState { SITTING, GRABBED, MOVING, POPPED };
+    public enum PieceState { SITTING, GRABBED, MOVING, POPPED, PREVIEW };
     #endregion
 
     #region Consts
@@ -18,18 +17,57 @@ public class PieceBehavior : MonoBehaviour
 
     #region Properties
     public PieceState State { get => _state; set => ChangeState(value); }
+    public PieceType Type
+    {
+        get => _pieceType;
+        set
+        {
+            _pieceType = value;
+            gameObject.name = ToString();
+            switch (value)
+            {
+                case PieceType.WHI:
+                    _sprite.color = Color.white;
+                    break;
+                case PieceType.RED:
+                    _sprite.color = Color.red;
+                    break;
+                case PieceType.ORA:
+                    _sprite.color = new Color(1.0f, 0.5f, 0.0f);
+                    break;
+                case PieceType.YEL:
+                    _sprite.color = Color.yellow;
+                    break;
+                case PieceType.GRE:
+                    _sprite.color = Color.green;
+                    break;
+                case PieceType.BLU:
+                    _sprite.color = Color.blue;
+                    break;
+                case PieceType.PUR:
+                    _sprite.color = Color.blue + Color.red;
+                    break;
+            }
+        }
+    }
     #endregion
 
     #region Fields
-    public PieceType pieceType = PieceType.WHI;
     public bool hardened = false;
+
     #endregion
 
     #region Members
-    private SpriteRenderer _sr;
-    private Collider2D _cd;
+    [SerializeField]
+    private SpriteRenderer _sprite;
+    private Collider2D _collider;
 
     private PieceState _state = PieceState.SITTING;
+    private PieceType _pieceType = PieceType.WHI;
+
+    [SerializeField]
+    private GameObject _arrowIndicator;
+    private GameBoardBehavior.PushDirection _arrowPointTo = GameBoardBehavior.PushDirection.UP;
 
     private Vector2 _targetPos;
     private float _startTime;
@@ -39,32 +77,20 @@ public class PieceBehavior : MonoBehaviour
     #region Unity Methods
     private void Start()
     {
-        _sr = GetComponent<SpriteRenderer>();
-        _cd = GetComponent<Collider2D>();
-
-        Color pieceColor = Color.white;
-        switch (this.pieceType)
+        _collider = GetComponent<Collider2D>();
+        if (_sprite == null)
         {
-            case PieceType.RED:
-                pieceColor = Color.red;
-                break;
-            case PieceType.ORA:
-                pieceColor = new Color(1.0f, 0.5f, 0.0f);
-                break;
-            case PieceType.YEL:
-                pieceColor = Color.yellow;
-                break;
-            case PieceType.GRE:
-                pieceColor = Color.green;
-                break;
-            case PieceType.BLU:
-                pieceColor = Color.blue;
-                break;
-            case PieceType.PUR:
-                pieceColor = Color.blue + Color.red;
-                break;
+            throw new MissingMemberException("Please provide a SpriteRenderer that's apart from this GameObject in the Inspector.");
         }
-        _sr.color = pieceColor;
+        if (_arrowIndicator == null)
+        {
+            throw new MissingMemberException("Please provide a GameObject to the Arrow Indicator field.");
+        }
+        else if (_arrowIndicator.GetComponent<SpriteRenderer>() == null)
+        {
+            throw new MissingComponentException("The GameObject you provided as the Arrow Indicator has no Sprite.");
+        }
+        _arrowIndicator.GetComponent<SpriteRenderer>().enabled = false;
     }
 
     private void Update()
@@ -89,6 +115,13 @@ public class PieceBehavior : MonoBehaviour
                 break;
             case PieceState.POPPED:
                 break;
+            case PieceState.PREVIEW:
+                {
+                    float distCovered = (Time.time - _startTime) * MOVE_SPEED;
+                    float fractionOfJourney = distCovered / _journeyLength;
+                    _sprite.transform.position = Vector2.Lerp(_sprite.transform.position, _targetPos, fractionOfJourney);
+                }
+                break;
         }
     }
     #endregion
@@ -105,26 +138,120 @@ public class PieceBehavior : MonoBehaviour
         }
     }
 
+    public void MoveTo(GameBoardBehavior.PushDirection targetDir, float units)
+    {
+        Vector2 targetPos = transform.position;
+        switch (targetDir)
+        {
+            case GameBoardBehavior.PushDirection.UP:
+                targetPos.y += units;
+                break;
+            case GameBoardBehavior.PushDirection.RIGHT:
+                targetPos.y += units;
+                break;
+            case GameBoardBehavior.PushDirection.DOWN:
+                targetPos.y -= units;
+                break;
+            case GameBoardBehavior.PushDirection.LEFT:
+                targetPos.y -= units;
+                break;
+        }
+        MoveTo(targetPos);
+    }
+
+    public void PreviewMoveTo(Vector2 targetPos)
+    {
+        if (State != PieceState.PREVIEW)
+        {
+            State = PieceState.PREVIEW;
+            _targetPos = targetPos;
+            _startTime = Time.time;
+            _journeyLength = Vector2.Distance(_sprite.transform.position, _targetPos);
+        }
+    }
+
+    public void PreviewMoveTo(GameBoardBehavior.PushDirection targetDir, float units)
+    {
+        Vector2 targetPos = _sprite.transform.position;
+        switch (targetDir)
+        {
+            case GameBoardBehavior.PushDirection.UP:
+                targetPos.y += units;
+                break;
+            case GameBoardBehavior.PushDirection.RIGHT:
+                targetPos.y += units;
+                break;
+            case GameBoardBehavior.PushDirection.DOWN:
+                targetPos.y -= units;
+                break;
+            case GameBoardBehavior.PushDirection.LEFT:
+                targetPos.y -= units;
+                break;
+        }
+        _arrowPointTo = targetDir;
+        ToggleArrowIndicator();
+        RotateArrowIndicator();
+        PreviewMoveTo(targetPos);
+    }
+
+    public void RemovePreview()
+    {
+        ToggleArrowIndicator();
+        _arrowPointTo = GameBoardBehavior.PushDirection.UP;
+        _sprite.transform.position = transform.position;
+        State = PieceState.SITTING;
+    }
+
+    public void RotateArrowIndicator()
+    {
+        float degrees = 0.0f;
+        switch (_arrowPointTo)
+        {
+            case GameBoardBehavior.PushDirection.UP:
+                degrees = 0.0f;
+                break;
+            case GameBoardBehavior.PushDirection.LEFT:
+                degrees = 90.0f;
+                break;
+            case GameBoardBehavior.PushDirection.DOWN:
+                degrees = 180.0f;
+                break;
+            case GameBoardBehavior.PushDirection.RIGHT:
+                degrees = 270.0f;
+                break;
+        }
+        _arrowIndicator.transform.Rotate(new Vector3(0.0f, 0.0f, degrees));
+    }
+
     public override string ToString()
     {
-        return "Piece [" + pieceType.ToString() + "]";
+        return "Piece [" + _pieceType.ToString() + "]";
+    }
+
+    private void ToggleArrowIndicator()
+    {
+        SpriteRenderer srArrow = _arrowIndicator.GetComponent<SpriteRenderer>();
+        srArrow.enabled = !srArrow.enabled;
     }
 
     private void ChangeState(PieceState newState)
     {
-        this._state = newState;
-        switch (this.State)
+        PieceState fromState = _state;
+        _state = newState;
+        switch (State)
         {
             case PieceState.SITTING:
-                _cd.enabled = true;
+                _collider.enabled = true;
                 break;
             case PieceState.GRABBED:
-                _cd.enabled = false;
+                _collider.enabled = false;
                 break;
             case PieceState.MOVING:
-                _cd.enabled = false;
+                _collider.enabled = false;
                 break;
             case PieceState.POPPED:
+                break;
+            case PieceState.PREVIEW:
                 break;
         }
     }

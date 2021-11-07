@@ -15,6 +15,7 @@ public class PlayerInputBehavior : MonoBehaviour
     private GameObject _selectedObj, _objUnderCursor;
     private Vector2 _lastPosition;
 
+    private GameBoardBehavior.PushDirection _directionToPush;
     private bool _hasRequestedPreview = false;
     #endregion
 
@@ -57,9 +58,19 @@ public class PlayerInputBehavior : MonoBehaviour
             RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
             if (hit.collider != null && hit.collider.gameObject.GetComponent<PieceBehavior>() != null)
             {
-                _objUnderCursor = hit.collider.gameObject;
-                PreviewPlacement(_objUnderCursor, mousePos);
-                Debug.Log(CalculatePushDirection(_objUnderCursor, mousePos).ToString());
+                if (_hasRequestedPreview &&
+                    (hit.collider.gameObject != _objUnderCursor ||
+                    _directionToPush != CalculatePushDirection(hit.collider.gameObject, mousePos)))
+                {
+                    EndPreview();
+                }
+                else
+                {
+                    _objUnderCursor = hit.collider.gameObject;
+                    _directionToPush = CalculatePushDirection(_objUnderCursor, mousePos);
+                    PreviewPlacement();
+                }
+
             }
             if (_selectedObj != null)
             {
@@ -70,10 +81,12 @@ public class PlayerInputBehavior : MonoBehaviour
         /* ON MOUSE RELEASE */
         else if (Input.GetMouseButtonUp(0))
         {
+            EndPreview();
             if (_selectedObj != null)
             {
                 if (_objUnderCursor != null)
                 {
+                    /* DEBUG */ _selectedObj.GetComponent<PieceBehavior>().MoveTo(_lastPosition);
                     //_gb.PushPieces(_selectedObj, _objUnderCursor);
                 }
                 else
@@ -93,17 +106,22 @@ public class PlayerInputBehavior : MonoBehaviour
 
     }
 
-    private void PreviewPlacement(GameObject objectToPreview, Vector2 currentMousePos)
+    private void PreviewPlacement()
     {
         if (!_hasRequestedPreview)
         {
             _hasRequestedPreview = true;
+            _gb.PreviewPlacement(_selectedObj, _objUnderCursor, _directionToPush);
         }
     }
 
-    private void EndPreview(GameObject objectCurrentlyBeingPreviewed)
+    private void EndPreview()
     {
-        _hasRequestedPreview = false;
+        if (_hasRequestedPreview)
+        {
+            _hasRequestedPreview = false;
+            _gb.RemovePreviewPlacement();
+        }
     }
 
     /// <summary>

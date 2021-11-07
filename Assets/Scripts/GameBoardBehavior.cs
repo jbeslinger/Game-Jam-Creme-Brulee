@@ -6,7 +6,7 @@ using UnityEngine;
 public class GameBoardBehavior : MonoBehaviour
 {
     #region Enums
-    public enum PushDirection { UP, RIGHT, DOWN, LEFT };
+    public enum PushDirection { UP = 0, RIGHT = 1, DOWN = 2, LEFT = 3 };
     #endregion
 
     #region Consts
@@ -40,6 +40,25 @@ public class GameBoardBehavior : MonoBehaviour
         {
             GenerateNewBoard();
         }
+    }
+
+    private void Update()
+    {
+        /*if (Input.GetKeyDown(KeyCode.Z))
+        {
+            GenerateNewBoard();
+        }
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            MatchResult result = GetMatches();
+            foreach (List<GameObject> match in result.Matches)
+            {
+                foreach (GameObject piece in match)
+                {
+                    piece.GetComponent<SpriteRenderer>().color += new Color(0.5f, 0.5f, 0.5f);
+                }
+            }
+        }*/
     }
     #endregion
 
@@ -78,14 +97,27 @@ public class GameBoardBehavior : MonoBehaviour
         return (-1, -1);
     }
 
+    private Queue<(GameObject, PushDirection)> pathToEmptySpot;
     /// <summary>
     /// Plays a preview animation of where the bubbles are going to move if the player pushes them.
     /// </summary>
     /// <param name="pieceToPush"></param>
     /// <param name="pushDir"></param>
-    public void PreviewPlacement(GameObject pieceToPush, PushDirection pushDir)
+    public void PreviewPlacement(GameObject pieceToPlace, GameObject pieceToPush, PushDirection pushDir)
     {
-        // TODO: Implement
+        Queue<(GameObject, PushDirection)> temp = new Queue<(GameObject, PushDirection)>(); // Var to hold our path to the end; runs backwards
+        bool foundFlag = false; // Temp reference variable to tell the method we found the end
+        FindPath(pieceToPush, pieceToPlace, pushDir, temp, new BoardMap(), ref foundFlag);
+        
+        // Clone the steps for later use
+        pathToEmptySpot = new Queue<(GameObject, PushDirection)>(new Queue<(GameObject, PushDirection)>(temp));
+
+        while (temp.Count != 0)
+        {
+            (GameObject, PushDirection) piece = temp.Dequeue();
+            PieceBehavior pieceBehavior = piece.Item1.GetComponent<PieceBehavior>();
+            pieceBehavior.PreviewMoveTo(piece.Item2, 0.5f);
+        }
     }
 
     /// <summary>
@@ -93,7 +125,12 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     public void RemovePreviewPlacement()
     {
-        // TODO: Implement
+        while (pathToEmptySpot.Count != 0)
+        {
+            (GameObject, PushDirection) piece = pathToEmptySpot.Dequeue();
+            PieceBehavior pieceBehavior = piece.Item1.GetComponent<PieceBehavior>();
+            pieceBehavior.RemovePreview();
+        }
     }
 
     /// <summary>
@@ -112,9 +149,7 @@ public class GameBoardBehavior : MonoBehaviour
                 newPiece.transform.position = new Vector2(r, -c) + offset;
 
                 PieceBehavior newPieceBehavior = newPiece.GetComponent<PieceBehavior>();
-                newPieceBehavior.pieceType = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
-
-                newPiece.name = newPieceBehavior.ToString();
+                newPieceBehavior.Type = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
             }
         }
 
@@ -126,7 +161,7 @@ public class GameBoardBehavior : MonoBehaviour
             {
                 foreach (GameObject piece in match)
                 {
-                    piece.GetComponent<PieceBehavior>().pieceType = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
+                    piece.GetComponent<PieceBehavior>().Type = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
                 }
             }
             result = GetMatches();
@@ -242,6 +277,47 @@ public class GameBoardBehavior : MonoBehaviour
     }
 
     /// <summary>
+    /// Recursive method that finds the quickest path to the empty space for the bubble to fill.
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <param name="pathVar"></param>
+    /// <returns></returns>
+    private void FindPath(GameObject start, GameObject end, PushDirection pushDir, Queue<(GameObject, PushDirection)> pathVar, BoardMap tempMap, ref bool foundFlag)
+    {
+        (int,int) startIndex = IndexOf(start);
+        tempMap.Mark(startIndex);
+        (int,int) endIndex = IndexOf(end);
+        if (startIndex == endIndex)
+        {
+            foundFlag = true;
+            return;
+        }
+        else
+        {
+            // This for loop takes into account 'fromDir' which allows the order of operations to
+            // prefer one direction over the others when considering the next step; preference moves clockwise.
+            GameObject next = null;
+            for (int i = 0; i < 4; i++)
+            {
+                     if (((int)pushDir + i) % 4 == 0) { next = UpOf(start); pushDir = PushDirection.UP; }
+                else if (((int)pushDir + i) % 4 == 1) { next = RightOf(start); pushDir = PushDirection.RIGHT; }
+                else if (((int)pushDir + i) % 4 == 2) { next = DownOf(start); pushDir = PushDirection.DOWN; }
+                else if (((int)pushDir + i) % 4 == 3) { next = LeftOf(start); pushDir = PushDirection.LEFT; }
+                if (next != null && tempMap.IsUnmarked(IndexOf(next)) && !foundFlag)
+                {
+                    pathVar.Enqueue((start, pushDir));
+                    FindPath(next, end, pushDir, pathVar, tempMap, ref foundFlag);
+                }
+            }
+        }
+        if (!foundFlag)
+        {
+            pathVar.Dequeue();
+        }
+    }
+
+    /// <summary>
     /// Recursive method to check all cardinal directions of provided piece and return a list of matching colors.
     /// </summary>
     /// <param name="piece"></param>
@@ -253,25 +329,25 @@ public class GameBoardBehavior : MonoBehaviour
         if (map[idx.Item1, idx.Item2] == 0)
         {
             map[idx.Item1, idx.Item2] = 1;
-            PieceBehavior.PieceType myType = piece.GetComponent<PieceBehavior>().pieceType;
+            PieceBehavior.PieceType myType = piece.GetComponent<PieceBehavior>().Type;
             piecesOfSameType.Add(piece);
             GameObject upPiece = UpOf(piece);
-            if (upPiece != null && upPiece.GetComponent<PieceBehavior>().pieceType == myType)
+            if (upPiece != null && upPiece.GetComponent<PieceBehavior>().Type == myType)
             {
                 piecesOfSameType.AddRange(CheckPiece(upPiece, map));
             }
             GameObject rightPiece = RightOf(piece);
-            if (rightPiece != null && rightPiece.GetComponent<PieceBehavior>().pieceType == myType)
+            if (rightPiece != null && rightPiece.GetComponent<PieceBehavior>().Type == myType)
             {
                 piecesOfSameType.AddRange(CheckPiece(rightPiece, map));
             }
             GameObject downPiece = DownOf(piece);
-            if (downPiece != null && downPiece.GetComponent<PieceBehavior>().pieceType == myType)
+            if (downPiece != null && downPiece.GetComponent<PieceBehavior>().Type == myType)
             {
                 piecesOfSameType.AddRange(CheckPiece(downPiece, map));
             }
             GameObject leftPiece = LeftOf(piece);
-            if (leftPiece != null && leftPiece.GetComponent<PieceBehavior>().pieceType == myType)
+            if (leftPiece != null && leftPiece.GetComponent<PieceBehavior>().Type == myType)
             {
                 piecesOfSameType.AddRange(CheckPiece(leftPiece, map));
             }
@@ -306,6 +382,32 @@ public class GameBoardBehavior : MonoBehaviour
         public void AddMatch(List<GameObject> pieces)
         {
             _matches.Add(pieces);
+        }
+        #endregion
+    }
+
+    private class BoardMap
+    {
+        #region Members
+        int[,] _map;
+        #endregion
+
+        #region Constructors
+        public BoardMap()
+        {
+            _map = new int[BOARD_SIZE, BOARD_SIZE];
+        }
+        #endregion
+
+        #region Methods
+        public void Mark((int,int) location)
+        {
+            _map[location.Item1, location.Item2] = 1;
+        }
+
+        public bool IsUnmarked((int, int) location)
+        {
+            return _map[location.Item1, location.Item2] == 0;
         }
         #endregion
     }
