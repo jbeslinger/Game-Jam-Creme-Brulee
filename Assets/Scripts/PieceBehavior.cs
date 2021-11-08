@@ -67,7 +67,7 @@ public class PieceBehavior : MonoBehaviour
 
     [SerializeField]
     private GameObject _arrowIndicator;
-    private GameBoardBehavior.PushDirection _arrowPointTo = GameBoardBehavior.PushDirection.UP;
+    private PushDirection _arrowPointTo = PushDirection.UP;
 
     private Vector2 _targetPos;
     private float _startTime;
@@ -139,21 +139,21 @@ public class PieceBehavior : MonoBehaviour
         }
     }
 
-    public void MoveTo(GameBoardBehavior.PushDirection targetDir, float units)
+    public void MoveTo(PushDirection targetDir, float units)
     {
         Vector2 targetPos = transform.position;
         switch (targetDir)
         {
-            case GameBoardBehavior.PushDirection.UP:
+            case PushDirection.UP:
                 targetPos.y += units;
                 break;
-            case GameBoardBehavior.PushDirection.RIGHT:
+            case PushDirection.RIGHT:
                 targetPos.y += units;
                 break;
-            case GameBoardBehavior.PushDirection.DOWN:
+            case PushDirection.DOWN:
                 targetPos.y -= units;
                 break;
-            case GameBoardBehavior.PushDirection.LEFT:
+            case PushDirection.LEFT:
                 targetPos.y -= units;
                 break;
         }
@@ -171,21 +171,21 @@ public class PieceBehavior : MonoBehaviour
         }
     }
 
-    public void PreviewMoveTo(GameBoardBehavior.PushDirection targetDir, float units)
+    public void PreviewMoveTo(PushDirection targetDir, float units)
     {
         Vector2 targetPos = _sprite.transform.position;
         switch (targetDir)
         {
-            case GameBoardBehavior.PushDirection.UP:
+            case PushDirection.UP:
                 targetPos.y += units;
                 break;
-            case GameBoardBehavior.PushDirection.RIGHT:
+            case PushDirection.RIGHT:
                 targetPos.x += units;
                 break;
-            case GameBoardBehavior.PushDirection.DOWN:
+            case PushDirection.DOWN:
                 targetPos.y -= units;
                 break;
-            case GameBoardBehavior.PushDirection.LEFT:
+            case PushDirection.LEFT:
                 targetPos.x -= units;
                 break;
         }
@@ -198,7 +198,7 @@ public class PieceBehavior : MonoBehaviour
     public void RemovePreview()
     {
         ToggleArrowIndicator();
-        _arrowPointTo = GameBoardBehavior.PushDirection.UP;
+        _arrowPointTo = PushDirection.UP;
         _sprite.transform.position = transform.position;
         State = PieceState.SITTING;
     }
@@ -208,16 +208,16 @@ public class PieceBehavior : MonoBehaviour
         float degrees = 0.0f;
         switch (_arrowPointTo)
         {
-            case GameBoardBehavior.PushDirection.UP:
+            case PushDirection.UP:
                 degrees = 0.0f;
                 break;
-            case GameBoardBehavior.PushDirection.LEFT:
+            case PushDirection.LEFT:
                 degrees = 90.0f;
                 break;
-            case GameBoardBehavior.PushDirection.DOWN:
+            case PushDirection.DOWN:
                 degrees = 180.0f;
                 break;
-            case GameBoardBehavior.PushDirection.RIGHT:
+            case PushDirection.RIGHT:
                 degrees = 270.0f;
                 break;
         }

@@ -15,7 +15,7 @@ public class PlayerInputBehavior : MonoBehaviour
     private GameObject _selectedObj, _objUnderCursor;
     private Vector2 _lastPosition;
 
-    private GameBoardBehavior.PushDirection _directionToPush;
+    private PushDirection _directionToPush;
     private bool _hasRequestedPreview = false;
     #endregion
 
@@ -129,24 +129,24 @@ public class PlayerInputBehavior : MonoBehaviour
     /// <param name="objectToPush"></param>
     /// <param name="currentMousePos"></param>
     /// <returns></returns>
-    private GameBoardBehavior.PushDirection CalculatePushDirection(GameObject objectToPush, Vector2 currentMousePos)
+    private PushDirection CalculatePushDirection(GameObject objectToPush, Vector2 currentMousePos)
     {
         float angle = CalculateAngleBetweenPoints(objectToPush.transform.position, currentMousePos);
         if (angle <= 135f && angle > 45f)
         {
-            return GameBoardBehavior.PushDirection.DOWN;
+            return PushDirection.DOWN;
         }
         else if ((angle <= 45f && angle >= 0f) || (angle <= 360f && angle > 315f))
         {
-            return GameBoardBehavior.PushDirection.LEFT;
+            return PushDirection.LEFT;
         }
         else if (angle <= 315f && angle > 225f)
         {
-            return GameBoardBehavior.PushDirection.UP;
+            return PushDirection.UP;
         }
         else
         {
-            return GameBoardBehavior.PushDirection.RIGHT;
+            return PushDirection.RIGHT;
         }
     }
 

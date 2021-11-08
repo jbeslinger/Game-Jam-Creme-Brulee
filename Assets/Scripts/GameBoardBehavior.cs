@@ -5,10 +5,6 @@ using UnityEngine;
 
 public class GameBoardBehavior : MonoBehaviour
 {
-    #region Enums
-    public enum PushDirection { UP = 0, RIGHT = 1, DOWN = 2, LEFT = 3 };
-    #endregion
-
     #region Consts
     private const int BOARD_SIZE = 8;
     private const int POINT_REWARD = 200;
@@ -83,7 +79,7 @@ public class GameBoardBehavior : MonoBehaviour
         return (-1, -1);
     }
 
-    private Stack<(GameObject, PushDirection)> pathToEmptySpot;
+    private Stack<GameMove> pathToEmptySpot;
     /// <summary>
     /// Plays a preview animation of where the bubbles are going to move if the player pushes them.
     /// </summary>
@@ -91,18 +87,17 @@ public class GameBoardBehavior : MonoBehaviour
     /// <param name="pushDir"></param>
     public void PreviewPlacement(GameObject pieceToPlace, GameObject pieceToPush, PushDirection pushDir)
     {
-        Stack<(GameObject, PushDirection)> temp = new Stack<(GameObject, PushDirection)>(); // Var to hold our path to the end; runs backwards
+        Stack<GameMove> temp = new Stack<GameMove>(); // Var to hold our path to the end; runs backwards
         bool foundFlag = false; // Temp reference variable to tell the method we found the end
         FindPath(pieceToPush, pieceToPlace, pushDir, temp, new BoardMap(), ref foundFlag);
         
         // Clone the steps for later use
-        pathToEmptySpot = new Stack<(GameObject, PushDirection)>(new Stack<(GameObject, PushDirection)>(temp));
+        pathToEmptySpot = new Stack<GameMove>(new Stack<GameMove>(temp));
 
         while (temp.Count != 0)
         {
-            (GameObject, PushDirection) piece = temp.Pop();
-            PieceBehavior pieceBehavior = piece.Item1.GetComponent<PieceBehavior>();
-            pieceBehavior.PreviewMoveTo(piece.Item2, 0.5f);
+            GameMove move = temp.Pop();
+            move.pieceToMove.GetComponent<PieceBehavior>().PreviewMoveTo(move.dirToMove, 0.5f);
         }
     }
 
@@ -113,10 +108,16 @@ public class GameBoardBehavior : MonoBehaviour
     {
         while (pathToEmptySpot.Count != 0)
         {
-            (GameObject, PushDirection) piece = pathToEmptySpot.Pop();
-            PieceBehavior pieceBehavior = piece.Item1.GetComponent<PieceBehavior>();
-            pieceBehavior.RemovePreview();
+            pathToEmptySpot.Pop().pieceToMove.GetComponent<PieceBehavior>().RemovePreview();
         }
+    }
+
+    /// <summary>
+    /// Perform the move requested.
+    /// </summary>
+    public void PerformMove()
+    {
+        BoardTurn nextMove = new BoardTurn(pathToEmptySpot);
     }
 
     /// <summary>
@@ -307,7 +308,7 @@ public class GameBoardBehavior : MonoBehaviour
     /// <param name="end"></param>
     /// <param name="pathVar"></param>
     /// <returns></returns>
-    private void FindPath(GameObject start, GameObject end, PushDirection pushDir, Stack<(GameObject, PushDirection)> pathVar, BoardMap tempMap, ref bool foundFlag)
+    private void FindPath(GameObject start, GameObject end, PushDirection pushDir, Stack<GameMove> pathVar, BoardMap tempMap, ref bool foundFlag)
     {
         (int,int) startIndex = IndexOf(start);
         tempMap.Mark(startIndex);
@@ -330,7 +331,7 @@ public class GameBoardBehavior : MonoBehaviour
                 else if (((int)pushDir + i) % 4 == 3) { next = LeftOf(start);   pushDir = PushDirection.LEFT; }
                 if (next != null && tempMap.IsUnmarked(IndexOf(next)) && !foundFlag)
                 {
-                    pathVar.Push((start, pushDir));
+                    pathVar.Push(new GameMove(start, pushDir));
                     FindPath(next, end, pushDir, pathVar, tempMap, ref foundFlag);
                 }
             }
@@ -343,18 +344,18 @@ public class GameBoardBehavior : MonoBehaviour
     #endregion
 
     #region Subclasses
-    private class BoardMove
+    private class BoardTurn
     {
         #region Members
         /// <summary>
         /// Each layer contains a reference to a piece, the direction it was pushed,
         /// and its original location.
         /// </summary>
-        private readonly Stack<(GameObject, PushDirection, Vector2)> _moves = new Stack<(GameObject, PushDirection, Vector2)>();
+        private readonly Stack<GameMove> _moves = new Stack<GameMove>();
         #endregion
 
         #region Constructors
-        public BoardMove(Stack<(GameObject, PushDirection, Vector2)> moves)
+        public BoardTurn(Stack<GameMove> moves)
         {
             _moves = moves;
         }
