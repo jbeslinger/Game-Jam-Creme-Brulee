@@ -102,11 +102,11 @@ public class PieceBehavior : MonoBehaviour
             case PieceState.GRABBED:
                 break;
             case PieceState.MOVING:
-                if ((Vector2)transform.position != _targetPos)
+                if ((Vector2)transform.localPosition != _targetPos)
                 {
                     float distCovered = (Time.time - _startTime) * MOVE_SPEED;
                     float fractionOfJourney = distCovered / _journeyLength;
-                    transform.position = Vector2.Lerp(transform.position, _targetPos, fractionOfJourney);
+                    transform.localPosition = Vector2.Lerp(transform.localPosition, _targetPos, fractionOfJourney);
                 }
                 else
                 {
@@ -135,13 +135,13 @@ public class PieceBehavior : MonoBehaviour
             State = PieceState.MOVING;
             _targetPos = targetPos;
             _startTime = Time.time;
-            _journeyLength = Vector2.Distance(transform.position, _targetPos);
+            _journeyLength = Vector2.Distance(transform.localPosition, _targetPos);
         }
     }
 
     public void MoveTo(PushDirection targetDir, float units)
     {
-        Vector2 targetPos = transform.position;
+        Vector2 targetPos = transform.localPosition;
         switch (targetDir)
         {
             case PushDirection.UP:
@@ -162,17 +162,23 @@ public class PieceBehavior : MonoBehaviour
 
     public void PreviewMoveTo(Vector2 targetPos)
     {
-        if (State != PieceState.PREVIEW)
+        State = PieceState.PREVIEW;
+        if (State == PieceState.GRABBED)
         {
-            State = PieceState.PREVIEW;
-            _targetPos = targetPos;
-            _startTime = Time.time;
-            _journeyLength = Vector2.Distance(_sprite.transform.position, _targetPos);
+            return;
         }
+        _targetPos = targetPos;
+        _startTime = Time.time;
+        _journeyLength = Vector2.Distance(_sprite.transform.position, _targetPos);
     }
 
     public void PreviewMoveTo(PushDirection targetDir, float units)
     {
+        State = PieceState.PREVIEW;
+        if (State == PieceState.GRABBED)
+        {
+            return;
+        }
         Vector2 targetPos = _sprite.transform.position;
         switch (targetDir)
         {
@@ -197,6 +203,10 @@ public class PieceBehavior : MonoBehaviour
 
     public void RemovePreview()
     {
+        if (State == PieceState.GRABBED)
+        {
+            return;
+        }
         ToggleArrowIndicator();
         _arrowPointTo = PushDirection.UP;
         _sprite.transform.position = transform.position;
@@ -237,6 +247,10 @@ public class PieceBehavior : MonoBehaviour
 
     private void ChangeState(PieceState newState)
     {
+        if (_state == newState)
+        {
+            return;
+        }
         PieceState fromState = _state;
         _state = newState;
         switch (State)
@@ -253,6 +267,8 @@ public class PieceBehavior : MonoBehaviour
             case PieceState.POPPED:
                 break;
             case PieceState.PREVIEW:
+                // Cannot transition from GRABBED TO PREVIEW
+                _state = fromState == PieceState.GRABBED ? PieceState.GRABBED : PieceState.PREVIEW;
                 break;
         }
     }

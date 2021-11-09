@@ -48,7 +48,7 @@ public class PlayerInputBehavior : MonoBehaviour
             {
                 _selectedObj = hit.collider.gameObject;
                 _selectedObj.GetComponent<PieceBehavior>().State = PieceBehavior.PieceState.GRABBED;
-                _lastPosition = _selectedObj.transform.position;
+                _lastPosition = _selectedObj.transform.localPosition;
             }
         }
 
@@ -72,6 +72,10 @@ public class PlayerInputBehavior : MonoBehaviour
                 }
 
             }
+            else
+            {
+                _objUnderCursor = null;
+            }
             if (_selectedObj != null)
             {
                 _selectedObj.transform.position = (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -86,11 +90,11 @@ public class PlayerInputBehavior : MonoBehaviour
             {
                 if (_objUnderCursor != null)
                 {
-                    /* DEBUG */ _selectedObj.GetComponent<PieceBehavior>().MoveTo(_lastPosition);
+                    RequestPlacement();
                 }
                 else
                 {
-                    _selectedObj.GetComponent<PieceBehavior>().MoveTo(_lastPosition);
+                    _selectedObj.GetComponent<PieceBehavior>().PreviewMoveTo(_lastPosition);
                 }
             }
             _selectedObj = null;
@@ -100,11 +104,19 @@ public class PlayerInputBehavior : MonoBehaviour
     #endregion
 
     #region Methods
-    private void RequestPush(GameObject objectToPush, Vector2 currentMousePos)
+    /// <summary>
+    /// Makes a move on the gameboard. Must be called after PreviewPlacement().
+    /// </summary>
+    /// <param name="objectToPush"></param>
+    /// <param name="currentMousePos"></param>
+    private void RequestPlacement()
     {
-
+        _gb.PerformMove();
     }
 
+    /// <summary>
+    /// Calls for a preview of the piece placement on the gameboard. Must be caled before RequestPlacement().
+    /// </summary>
     private void PreviewPlacement()
     {
         if (!_hasRequestedPreview)
@@ -114,6 +126,9 @@ public class PlayerInputBehavior : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Calls to end the preview on the gameboard.
+    /// </summary>
     private void EndPreview()
     {
         if (_hasRequestedPreview)

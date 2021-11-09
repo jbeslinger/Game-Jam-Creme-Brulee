@@ -17,8 +17,8 @@ public class GameBoardBehavior : MonoBehaviour
     #region Members
     [SerializeField]
     private GameObject _piecePrefab;
-    
     private List<GameObject> _previewObjects = new List<GameObject>();
+    private Stack<BoardTurn> _turns = new Stack<BoardTurn>();
     #endregion
 
     #region Unity Methods
@@ -79,7 +79,7 @@ public class GameBoardBehavior : MonoBehaviour
         return (-1, -1);
     }
 
-    private Stack<GameMove> pathToEmptySpot;
+    private Stack<GameMove> _pathToEmptySpot;
     /// <summary>
     /// Plays a preview animation of where the bubbles are going to move if the player pushes them.
     /// </summary>
@@ -92,12 +92,11 @@ public class GameBoardBehavior : MonoBehaviour
         FindPath(pieceToPush, pieceToPlace, pushDir, temp, new BoardMap(), ref foundFlag);
         
         // Clone the steps for later use
-        pathToEmptySpot = new Stack<GameMove>(new Stack<GameMove>(temp));
-
+        _pathToEmptySpot = new Stack<GameMove>(new Stack<GameMove>(temp));
         while (temp.Count != 0)
         {
             GameMove move = temp.Pop();
-            move.pieceToMove.GetComponent<PieceBehavior>().PreviewMoveTo(move.dirToMove, 0.5f);
+            move.pieceToMove.GetComponent<PieceBehavior>().PreviewMoveTo(move.dirToMove, 0.75f);
         }
     }
 
@@ -106,9 +105,10 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     public void RemovePreviewPlacement()
     {
-        while (pathToEmptySpot.Count != 0)
+        Stack<GameMove> temp = new Stack<GameMove>(new Stack<GameMove>(_pathToEmptySpot));
+        while (temp.Count != 0)
         {
-            pathToEmptySpot.Pop().pieceToMove.GetComponent<PieceBehavior>().RemovePreview();
+            temp.Pop().pieceToMove.GetComponent<PieceBehavior>().RemovePreview();
         }
     }
 
@@ -117,7 +117,31 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     public void PerformMove()
     {
-        BoardTurn nextMove = new BoardTurn(pathToEmptySpot);
+        if (_pathToEmptySpot == null || _pathToEmptySpot.Count <= 0)
+        {
+            return;
+        }
+        BoardTurn nextTurn = new BoardTurn(_pathToEmptySpot);
+        nextTurn.Execute(this);
+        MatchResult result = GetMatches();
+        if (!result.Valid)
+        {
+            nextTurn.UndoExecution(this);
+        }
+        else
+        {
+            _turns.Push(nextTurn);
+        }
+    }
+
+    /// <summary>
+    /// Undoes the last turn the player took.
+    /// </summary>
+    public void UndoLastTurn()
+    {
+        // TODO: Make sure the player loses points by undoing.
+        BoardTurn lastTurn = _turns.Pop();
+        lastTurn.UndoExecution(this);
     }
 
     /// <summary>
@@ -127,13 +151,13 @@ public class GameBoardBehavior : MonoBehaviour
     {
         ClearBoard();
         Vector2 offset = this.transform.position;
-        for (int r = 0; r < BOARD_SIZE; r++)
+        for (int col = 0; col < BOARD_SIZE; col++)
         {
-            for (int c = 0; c < BOARD_SIZE; c++)
+            for (int row = 0; row < BOARD_SIZE; row++)
             {
                 GameObject newPiece = GameObject.Instantiate(_piecePrefab, this.transform);
-                this.pieces[r, c] = newPiece;
-                newPiece.transform.position = new Vector2(r, -c) + offset;
+                this.pieces[col, row] = newPiece;
+                newPiece.transform.position = new Vector2(col, -row) + offset;
 
                 PieceBehavior newPieceBehavior = newPiece.GetComponent<PieceBehavior>();
                 newPieceBehavior.Type = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
@@ -301,6 +325,7 @@ public class GameBoardBehavior : MonoBehaviour
         return piecesOfSameType;
     }
 
+    GameObject firstPiece;
     /// <summary>
     /// Recursive method that finds the quickest path to the empty space for the bubble to fill.
     /// </summary>
@@ -310,12 +335,19 @@ public class GameBoardBehavior : MonoBehaviour
     /// <returns></returns>
     private void FindPath(GameObject start, GameObject end, PushDirection pushDir, Stack<GameMove> pathVar, BoardMap tempMap, ref bool foundFlag)
     {
+        if (firstPiece == null)
+        {
+            firstPiece = start;
+        }
         (int,int) startIndex = IndexOf(start);
         tempMap.Mark(startIndex);
         (int,int) endIndex = IndexOf(end);
         if (startIndex == endIndex)
         {
+            // We know we're back to the piece that was grabbed, so we set direction to Direct
+            pathVar.Push(new GameMove(start, endIndex, IndexOf(firstPiece)));
             foundFlag = true;
+            firstPiece = null;
             return;
         }
         else
@@ -331,7 +363,7 @@ public class GameBoardBehavior : MonoBehaviour
                 else if (((int)pushDir + i) % 4 == 3) { next = LeftOf(start);   pushDir = PushDirection.LEFT; }
                 if (next != null && tempMap.IsUnmarked(IndexOf(next)) && !foundFlag)
                 {
-                    pathVar.Push(new GameMove(start, pushDir));
+                    pathVar.Push(new GameMove(start, pushDir, IndexOf(start)));
                     FindPath(next, end, pushDir, pathVar, tempMap, ref foundFlag);
                 }
             }
@@ -351,7 +383,7 @@ public class GameBoardBehavior : MonoBehaviour
         /// Each layer contains a reference to a piece, the direction it was pushed,
         /// and its original location.
         /// </summary>
-        private readonly Stack<GameMove> _moves = new Stack<GameMove>();
+        private readonly Stack<GameMove> _moves;
         #endregion
 
         #region Constructors
@@ -365,17 +397,29 @@ public class GameBoardBehavior : MonoBehaviour
         /// <summary>
         /// Calls MoveTo() on each piece in _moves.
         /// </summary>
-        public void Execute()
+        public void Execute(in GameBoardBehavior board)
         {
-            //  TODO: Implement
+            // Clone the original data set so we can keep it for later.
+            Stack<GameMove> temp = new Stack<GameMove>(new Stack<GameMove>(_moves));
+            while (temp.Count > 0)
+            {
+                GameMove next = temp.Pop();
+                next.pieceToMove.GetComponent<PieceBehavior>().MoveTo(next.nextPositionOfPiece);
+                board.pieces[next.toIndex.Item1, next.toIndex.Item2] = next.pieceToMove;
+            }
         }
 
         /// <summary>
         /// Calls MoveTo() on each piece with its original location. Also brings pieces back from the dead.
         /// </summary>
-        public void UndoExecution()
+        public void UndoExecution(in GameBoardBehavior board)
         {
-            //  TODO: Implement
+            while (_moves.Count > 0)
+            {
+                GameMove next = _moves.Pop();
+                next.pieceToMove.GetComponent<PieceBehavior>().MoveTo(next.previousPositionOfPiece);
+                board.pieces[next.fromIndex.Item1, next.fromIndex.Item2] = next.pieceToMove;
+            }
         }
         #endregion
     }
