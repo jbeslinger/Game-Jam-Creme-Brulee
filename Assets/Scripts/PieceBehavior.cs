@@ -12,7 +12,8 @@ public class PieceBehavior : MonoBehaviour
     #endregion
 
     #region Consts
-    public float MOVE_SPEED = 5.0f; // In units per second
+    private const float MOVE_SPEED = 8f; // In units per second
+    private const float PREVIEW_MOVE_SPEED = MOVE_SPEED / 2f; // In units per second
     #endregion
 
     #region Properties
@@ -54,7 +55,6 @@ public class PieceBehavior : MonoBehaviour
 
     #region Fields
     public bool hardened = false;
-
     #endregion
 
     #region Members
@@ -70,7 +70,7 @@ public class PieceBehavior : MonoBehaviour
     private PushDirection _arrowPointTo = PushDirection.UP;
 
     private Vector2 _targetPos;
-    private float _startTime;
+    private float _framesElapsed;
     private float _journeyLength;
     #endregion
 
@@ -104,9 +104,10 @@ public class PieceBehavior : MonoBehaviour
             case PieceState.MOVING:
                 if ((Vector2)transform.localPosition != _targetPos)
                 {
-                    float distCovered = (Time.time - _startTime) * MOVE_SPEED;
+                    float distCovered = _framesElapsed * MOVE_SPEED;
                     float fractionOfJourney = distCovered / _journeyLength;
                     transform.localPosition = Vector2.Lerp(transform.localPosition, _targetPos, fractionOfJourney);
+                    _framesElapsed += (1f / 60f);
                 }
                 else
                 {
@@ -118,9 +119,10 @@ public class PieceBehavior : MonoBehaviour
                 break;
             case PieceState.PREVIEW:
                 {
-                    float distCovered = (Time.time - _startTime) * MOVE_SPEED;
+                    float distCovered = _framesElapsed * PREVIEW_MOVE_SPEED;
                     float fractionOfJourney = distCovered / _journeyLength;
                     _sprite.transform.position = Vector2.Lerp(_sprite.transform.position, _targetPos, fractionOfJourney);
+                    _framesElapsed += (1f / 60f);
                 }
                 break;
         }
@@ -134,30 +136,9 @@ public class PieceBehavior : MonoBehaviour
         {
             State = PieceState.MOVING;
             _targetPos = targetPos;
-            _startTime = Time.time;
+            _framesElapsed = 0;
             _journeyLength = Vector2.Distance(transform.localPosition, _targetPos);
         }
-    }
-
-    public void MoveTo(PushDirection targetDir, float units)
-    {
-        Vector2 targetPos = transform.localPosition;
-        switch (targetDir)
-        {
-            case PushDirection.UP:
-                targetPos.y += units;
-                break;
-            case PushDirection.RIGHT:
-                targetPos.y += units;
-                break;
-            case PushDirection.DOWN:
-                targetPos.y -= units;
-                break;
-            case PushDirection.LEFT:
-                targetPos.y -= units;
-                break;
-        }
-        MoveTo(targetPos);
     }
 
     public void PreviewMoveTo(Vector2 targetPos)
@@ -168,7 +149,7 @@ public class PieceBehavior : MonoBehaviour
             return;
         }
         _targetPos = targetPos;
-        _startTime = Time.time;
+        _framesElapsed = 0;
         _journeyLength = Vector2.Distance(_sprite.transform.position, _targetPos);
     }
 
@@ -232,6 +213,11 @@ public class PieceBehavior : MonoBehaviour
                 break;
         }
         _arrowIndicator.transform.rotation = Quaternion.Euler(0.0f, 0.0f, degrees);
+    }
+
+    public bool IsAnimating()
+    {
+        return State == PieceState.MOVING;
     }
 
     public override string ToString()

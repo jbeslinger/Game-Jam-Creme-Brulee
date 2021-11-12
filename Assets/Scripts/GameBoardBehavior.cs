@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class GameBoardBehavior : MonoBehaviour
@@ -10,13 +11,22 @@ public class GameBoardBehavior : MonoBehaviour
     private const int POINT_REWARD = 200;
     #endregion
 
+    #region Enums
+    private enum BoardState { READY, PAUSED, CHECKING }
+    #endregion
+
+    #region Properties
+    private BoardState State { get => _state; set => ChangeState(value); }
+    #endregion
+
     #region Fields
     public GameObject[,] pieces;
     #endregion
 
     #region Members
-    [SerializeField]
-    private GameObject _piecePrefab;
+    private BoardState _state = BoardState.READY;
+
+    [SerializeField] private GameObject _piecePrefab;
     private List<GameObject> _previewObjects = new List<GameObject>();
     private Stack<BoardTurn> _turns = new Stack<BoardTurn>();
     #endregion
@@ -40,21 +50,27 @@ public class GameBoardBehavior : MonoBehaviour
 
     private void Update()
     {
-        /*if (Input.GetKeyDown(KeyCode.Z))
+        switch (State)
         {
-            GenerateNewBoard();
-        }
-        if (Input.GetKeyDown(KeyCode.X))
-        {
-            MatchResult result = GetMatches();
-            foreach (List<GameObject> match in result.Matches)
-            {
-                foreach (GameObject piece in match)
+            case BoardState.READY:
+                break;
+            case BoardState.PAUSED:
+                break;
+            case BoardState.CHECKING:
+                MatchResult result = GetMatches();
+                if (!result.Valid)
                 {
-                    piece.GetComponent<SpriteRenderer>().color += new Color(0.5f, 0.5f, 0.5f);
+                    UndoLastTurn();
                 }
-            }
-        }*/
+                else
+                {
+                    /* TEMP */ State = BoardState.READY;
+                    // TODO: Break the bubbles here
+                }
+                break;
+        }
+
+        
     }
     #endregion
 
@@ -121,17 +137,10 @@ public class GameBoardBehavior : MonoBehaviour
         {
             return;
         }
-        BoardTurn nextTurn = new BoardTurn(_pathToEmptySpot);
-        nextTurn.Execute(this);
-        MatchResult result = GetMatches();
-        if (!result.Valid)
-        {
-            nextTurn.UndoExecution(this);
-        }
-        else
-        {
-            _turns.Push(nextTurn);
-        }
+        State = BoardState.PAUSED;
+        BoardTurn nextTurn = new BoardTurn(_pathToEmptySpot, this);
+        StartCoroutine(nextTurn.Execute(() => { State = BoardState.CHECKING; }));
+        _turns.Push(nextTurn);
     }
 
     /// <summary>
@@ -139,9 +148,9 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     public void UndoLastTurn()
     {
-        // TODO: Make sure the player loses points by undoing.
-        BoardTurn lastTurn = _turns.Pop();
-        lastTurn.UndoExecution(this);
+        // TODO: Make sure the player loses points by undoing if necessary.
+        State = BoardState.PAUSED;
+        StartCoroutine(_turns.Pop().UndoExecution(() => { State = BoardState.READY; }));
     }
 
     /// <summary>
@@ -373,7 +382,31 @@ public class GameBoardBehavior : MonoBehaviour
             pathVar.Pop();
         }
     }
+    
+    /// <summary>
+    /// Called by the property 'State' at add some entry/exit functionality.
+    /// </summary>
+    /// <param name="newState"></param>
+    private void ChangeState(BoardState newState)
+    {
+        if (_state == newState)
+        {
+            return;
+        }
+        BoardState fromState = _state;
+        _state = newState;
+        switch (State)
+        {
+            case BoardState.READY:
+                break;
+            case BoardState.PAUSED:
+                break;
+            case BoardState.CHECKING:
+                break;
+        }
+    }
     #endregion
+
 
     #region Subclasses
     private class BoardTurn
@@ -384,42 +417,78 @@ public class GameBoardBehavior : MonoBehaviour
         /// and its original location.
         /// </summary>
         private readonly Stack<GameMove> _moves;
+        private readonly GameBoardBehavior _board;
         #endregion
 
         #region Constructors
-        public BoardTurn(Stack<GameMove> moves)
+        public BoardTurn(Stack<GameMove> moves, in GameBoardBehavior board)
         {
             _moves = moves;
+            _board = board;
         }
         #endregion
 
         #region Methods
         /// <summary>
-        /// Calls MoveTo() on each piece in _moves.
+        /// Calls MoveTo() on each piece in _moves, then invokes the callback method when the pieces are done moving.
         /// </summary>
-        public void Execute(in GameBoardBehavior board)
+        public IEnumerator Execute(Action callback)
         {
+            List<PieceBehavior> pieces = new List<PieceBehavior>();
             // Clone the original data set so we can keep it for later.
             Stack<GameMove> temp = new Stack<GameMove>(new Stack<GameMove>(_moves));
             while (temp.Count > 0)
             {
                 GameMove next = temp.Pop();
-                next.pieceToMove.GetComponent<PieceBehavior>().MoveTo(next.nextPositionOfPiece);
-                board.pieces[next.toIndex.Item1, next.toIndex.Item2] = next.pieceToMove;
+                _board.pieces[next.toIndex.Item1, next.toIndex.Item2] = next.pieceToMove;
+                PieceBehavior pb = next.pieceToMove.GetComponent<PieceBehavior>();
+                pb.MoveTo(next.nextPositionOfPiece);
+                pieces.Add(pb);
             }
+
+            yield return new WaitUntil(() => {
+                foreach (PieceBehavior pb in pieces)
+                {
+                    if (pb.IsAnimating())
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            callback?.Invoke();
+            yield return null;
         }
 
         /// <summary>
         /// Calls MoveTo() on each piece with its original location. Also brings pieces back from the dead.
         /// </summary>
-        public void UndoExecution(in GameBoardBehavior board)
+        public IEnumerator UndoExecution(Action callback)
         {
+            List<PieceBehavior> pieces = new List<PieceBehavior>();
             while (_moves.Count > 0)
             {
                 GameMove next = _moves.Pop();
-                next.pieceToMove.GetComponent<PieceBehavior>().MoveTo(next.previousPositionOfPiece);
-                board.pieces[next.fromIndex.Item1, next.fromIndex.Item2] = next.pieceToMove;
+                _board.pieces[next.fromIndex.Item1, next.fromIndex.Item2] = next.pieceToMove;
+                PieceBehavior pb = next.pieceToMove.GetComponent<PieceBehavior>();
+                pb.MoveTo(next.previousPositionOfPiece);
+                pieces.Add(pb);
             }
+
+            yield return new WaitUntil(() => {
+                foreach (PieceBehavior pb in pieces)
+                {
+                    if (pb.IsAnimating())
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            callback?.Invoke();
+            yield return null;
         }
         #endregion
     }

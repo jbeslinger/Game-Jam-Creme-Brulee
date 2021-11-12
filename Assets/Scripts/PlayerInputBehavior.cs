@@ -94,7 +94,7 @@ public class PlayerInputBehavior : MonoBehaviour
                 }
                 else
                 {
-                    _selectedObj.GetComponent<PieceBehavior>().PreviewMoveTo(_lastPosition);
+                    _selectedObj.GetComponent<PieceBehavior>().MoveTo(_lastPosition);
                 }
             }
             _selectedObj = null;
