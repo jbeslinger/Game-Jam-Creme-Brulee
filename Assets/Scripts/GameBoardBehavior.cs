@@ -50,6 +50,13 @@ public class GameBoardBehavior : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.Z) && _turns.Count > 0)
+        {
+            UndoLastTurn();
+        }
+#endif
+
         switch (State)
         {
             case BoardState.READY:
