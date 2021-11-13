@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
+[RequireComponent(typeof(Animator))]
 public class PieceBehavior : MonoBehaviour
 {
     #region Enums
@@ -17,7 +18,35 @@ public class PieceBehavior : MonoBehaviour
     #endregion
 
     #region Properties
-    public PieceState State { get => _state; set => ChangeState(value); }
+    public PieceState State { get => _state; set
+        {
+            if (_state == value)
+            {
+                return;
+            }
+            PieceState fromState = _state;
+            _state = value;
+            switch (State)
+            {
+                case PieceState.SITTING:
+                    _coll.enabled = true;
+                    break;
+                case PieceState.GRABBED:
+                    _coll.enabled = false;
+                    break;
+                case PieceState.MOVING:
+                    _coll.enabled = false;
+                    break;
+                case PieceState.POPPED:
+                    _coll.enabled = false;
+                    break;
+                case PieceState.PREVIEW:
+                    // Cannot transition from GRABBED TO PREVIEW
+                    _state = fromState == PieceState.GRABBED ? PieceState.GRABBED : PieceState.PREVIEW;
+                    break;
+            }
+        }
+    }
     public PieceType Type
     {
         get => _pieceType;
@@ -51,16 +80,23 @@ public class PieceBehavior : MonoBehaviour
             }
         }
     }
+    public bool Hardened { get => _hardened; set
+        {
+            _hardened = value;
+            _anim.SetBool("Hardened", value);
+        }
+    }
     #endregion
 
     #region Fields
-    public bool hardened = false;
+    private bool _hardened = false;
     #endregion
 
     #region Members
     [SerializeField]
     private SpriteRenderer _sprite;
-    private Collider2D _collider;
+    private Collider2D _coll;
+    private Animator _anim;
 
     private PieceState _state = PieceState.SITTING;
     private PieceType _pieceType = PieceType.WHI;
@@ -77,7 +113,8 @@ public class PieceBehavior : MonoBehaviour
     #region Unity Methods
     private void Start()
     {
-        _collider = GetComponent<Collider2D>();
+        _coll = GetComponent<Collider2D>();
+        _anim = GetComponent<Animator>();
         if (_sprite == null)
         {
             throw new MissingMemberException("Please provide a SpriteRenderer that's apart from this GameObject in the Inspector.");
@@ -111,11 +148,10 @@ public class PieceBehavior : MonoBehaviour
                 }
                 else
                 {
-                    ChangeState(PieceState.SITTING);
+                    State = PieceState.SITTING;
                 }
                 break;
             case PieceState.POPPED:
-                /* TEMPORARY */ gameObject.SetActive(false);
                 break;
             case PieceState.PREVIEW:
                 {
@@ -220,6 +256,18 @@ public class PieceBehavior : MonoBehaviour
         return State == PieceState.MOVING;
     }
 
+    public void Pop()
+    {
+        State = PieceState.POPPED;
+        _anim.SetTrigger("Popped");
+    }
+
+    public void Revive()
+    {
+        State = PieceState.SITTING;
+        _anim.SetTrigger("Revived");
+    }
+
     public override string ToString()
     {
         return "Piece [" + _pieceType.ToString() + "]";
@@ -229,34 +277,6 @@ public class PieceBehavior : MonoBehaviour
     {
         SpriteRenderer srArrow = _arrowIndicator.GetComponent<SpriteRenderer>();
         srArrow.enabled = !srArrow.enabled;
-    }
-
-    private void ChangeState(PieceState newState)
-    {
-        if (_state == newState)
-        {
-            return;
-        }
-        PieceState fromState = _state;
-        _state = newState;
-        switch (State)
-        {
-            case PieceState.SITTING:
-                _collider.enabled = true;
-                break;
-            case PieceState.GRABBED:
-                _collider.enabled = false;
-                break;
-            case PieceState.MOVING:
-                _collider.enabled = false;
-                break;
-            case PieceState.POPPED:
-                break;
-            case PieceState.PREVIEW:
-                // Cannot transition from GRABBED TO PREVIEW
-                _state = fromState == PieceState.GRABBED ? PieceState.GRABBED : PieceState.PREVIEW;
-                break;
-        }
     }
     #endregion
 }
