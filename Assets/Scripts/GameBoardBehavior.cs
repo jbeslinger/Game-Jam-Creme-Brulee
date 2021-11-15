@@ -12,7 +12,7 @@ public class GameBoardBehavior : MonoBehaviour
     #endregion
 
     #region Enums
-    private enum BoardState { READY, PAUSED, CHECKING }
+    private enum BoardState { READY, PAUSED, CHECKING, REFILLING }
     #endregion
 
     #region Properties
@@ -71,9 +71,13 @@ public class GameBoardBehavior : MonoBehaviour
                 }
                 else
                 {
-                    /* TEMP */ State = BoardState.READY;
-                    // TODO: Break the bubbles here
+                    State = BoardState.PAUSED;
+                    StartCoroutine(BreakMatchingBubbles(result, () => { State = BoardState.REFILLING; }));
                 }
+                break;
+            case BoardState.REFILLING:
+                State = BoardState.PAUSED;
+                StartCoroutine(RefillBoard(() => { State = BoardState.READY; }));
                 break;
         }
 
@@ -93,13 +97,33 @@ public class GameBoardBehavior : MonoBehaviour
         {
             for (int c = 0; c < BOARD_SIZE; c++)
             {
-                if (this.pieces[r, c] == piece)
+                if (GetPiece((r, c)) == piece)
                 {
                     return (r, c);
                 }
             }
         }
         return (-1, -1);
+    }
+
+    /// <summary>
+    /// Shorter way of indexing the 2D array of gamepieces.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public GameObject GetPiece((int, int) index)
+    {
+        return pieces[index.Item1, index.Item2];
+    }
+
+    /// <summary>
+    /// Shorthand way of setting a spot in the board's array to a piece.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="piece"></param>
+    public void SetPiece((int, int) index, GameObject piece)
+    {
+        pieces[index.Item1, index.Item2] = piece;
     }
 
     private Stack<GameMove> _pathToEmptySpot;
@@ -160,6 +184,36 @@ public class GameBoardBehavior : MonoBehaviour
         StartCoroutine(_turns.Pop().UndoExecution(() => { State = BoardState.READY; }));
     }
 
+    private IEnumerator BreakMatchingBubbles(MatchResult matches, Action callback)
+    {
+        List<PieceBehavior> piecesBeingDestroyed = new List<PieceBehavior>();
+        foreach(List<GameObject> match in matches.Matches)
+        {
+            foreach(GameObject piece in match)
+            {
+                (int, int) idx = IndexOf(piece);
+                SetPiece(idx, null);
+                PieceBehavior pb = piece.GetComponent<PieceBehavior>();
+                piecesBeingDestroyed.Add(pb);
+                pb.Break();
+            }
+        }
+
+        yield return new WaitUntil(() => {
+            foreach (PieceBehavior pb in piecesBeingDestroyed)
+            {
+                if (pb.animating)
+                {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        callback?.Invoke();
+        yield return null;
+    }
+
     /// <summary>
     /// Generate a new board and guarantee there will be at most 2 pieces of same color touching.
     /// </summary>
@@ -172,7 +226,7 @@ public class GameBoardBehavior : MonoBehaviour
             for (int row = 0; row < BOARD_SIZE; row++)
             {
                 GameObject newPiece = GameObject.Instantiate(_piecePrefab, this.transform);
-                this.pieces[col, row] = newPiece;
+                SetPiece((col, row), newPiece);
                 newPiece.transform.position = new Vector2(col, -row) + offset;
 
                 PieceBehavior newPieceBehavior = newPiece.GetComponent<PieceBehavior>();
@@ -206,7 +260,7 @@ public class GameBoardBehavior : MonoBehaviour
             {
                 for (int c = 0; c < BOARD_SIZE; c++)
                 {
-                    GameObject.Destroy(this.pieces[r, c]);
+                    GameObject.Destroy(GetPiece((r, c)));
                 }
             }
         }
@@ -214,67 +268,57 @@ public class GameBoardBehavior : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns the GameObject above the supplied piece. Returns null if OOB.
+    /// Scans the whole board and adds new pieces while moving all pieces up to fill empty spots.
     /// </summary>
-    /// <param name="piece"></param>
-    private GameObject UpOf(GameObject piece)
+    private IEnumerator RefillBoard(Action callback)
     {
-        GameObject result = null;
-        (int, int) idx = IndexOf(piece);
-        idx.Item2 -= 1;
-        if (idx.Item2 >= 0)
+        for (int col = 0; col < BOARD_SIZE; col++)
         {
-            result = pieces[idx.Item1, idx.Item2];
+
         }
-        return result;
+
+        callback?.Invoke();
+        yield return null;
     }
 
-    /// <summary>
-    /// Returns the GameObject to the right of the supplied piece. Returns null if OOB.
-    /// </summary>
-    /// <param name="piece"></param>
-    private GameObject RightOf(GameObject piece)
+    private (int, int) AdjacentTo(GameObject piece, PushDirection directionOf)
     {
-        GameObject result = null;
-        (int, int) idx = IndexOf(piece);
-        idx.Item1 += 1;
-        if (idx.Item1 < BOARD_SIZE)
-        {
-            result = pieces[idx.Item1, idx.Item2];
-        }
-        return result;
+        return AdjacentTo(IndexOf(piece), directionOf);
     }
 
-    /// <summary>
-    /// Returns the GameObject to the left of the supplied piece. Returns null if OOB.
-    /// </summary>
-    /// <param name="piece"></param>
-    private GameObject LeftOf(GameObject piece)
+    private (int, int) AdjacentTo((int, int) idx, PushDirection directionOf)
     {
-        GameObject result = null;
-        (int, int) idx = IndexOf(piece);
-        idx.Item1 -= 1;
-        if (idx.Item1 >= 0)
+        (int, int) pieceAdjacentToThis = (-1, -1);
+        switch (directionOf)
         {
-            result = pieces[idx.Item1, idx.Item2];
+            case PushDirection.UP:
+                if (idx.Item2-1 >= 0)
+                {
+                    pieceAdjacentToThis = (idx.Item1, idx.Item2-1);
+                }
+                break;
+            case PushDirection.RIGHT:
+                if (idx.Item1+1 < BOARD_SIZE)
+                {
+                    pieceAdjacentToThis = (idx.Item1+1, idx.Item2);
+                }
+                break;
+            case PushDirection.DOWN:
+                if (idx.Item2+1 < BOARD_SIZE)
+                {
+                    pieceAdjacentToThis = (idx.Item1, idx.Item2+1);
+                }
+                break;
+            case PushDirection.LEFT:
+                if (idx.Item1-1 >= 0)
+                {
+                    pieceAdjacentToThis = (idx.Item1-1, idx.Item2);
+                }
+                break;
+            case PushDirection.DIRECT:
+                throw new ArgumentException("This is an invalid push direction to find the adjacent piece.");
         }
-        return result;
-    }
-
-    /// <summary>
-    /// Returns the GameObject below the supplied piece. Returns null if OOB.
-    /// </summary>
-    /// <param name="piece"></param>
-    private GameObject DownOf(GameObject piece)
-    {
-        GameObject result = null;
-        (int, int) idx = IndexOf(piece);
-        idx.Item2 += 1;
-        if (idx.Item2 < BOARD_SIZE)
-        {
-            result = pieces[idx.Item1, idx.Item2];
-        }
-        return result;
+        return pieceAdjacentToThis;
     }
 
     /// <summary>
@@ -292,7 +336,7 @@ public class GameBoardBehavior : MonoBehaviour
         {
             for (int c = 0; c < BOARD_SIZE; c++)
             {
-                potentialMatch = CheckPiece(pieces[r, c], map);
+                potentialMatch = CheckPiece(GetPiece((r, c)), map);
                 if (potentialMatch.Count >= 3)
                 {
                     result.AddMatch(potentialMatch);
@@ -317,25 +361,41 @@ public class GameBoardBehavior : MonoBehaviour
             map[idx.Item1, idx.Item2] = 1;
             PieceBehavior.PieceType myType = piece.GetComponent<PieceBehavior>().Type;
             piecesOfSameType.Add(piece);
-            GameObject upPiece = UpOf(piece);
-            if (upPiece != null && upPiece.GetComponent<PieceBehavior>().Type == myType)
+            (int, int) upIdx = AdjacentTo(piece, PushDirection.UP);
+            if (upIdx != (-1, -1))
             {
-                piecesOfSameType.AddRange(CheckPiece(upPiece, map));
+                GameObject upPiece = GetPiece(upIdx);
+                if (upPiece.GetComponent<PieceBehavior>().Type == myType)
+                {
+                    piecesOfSameType.AddRange(CheckPiece(upPiece, map));
+                }
             }
-            GameObject rightPiece = RightOf(piece);
-            if (rightPiece != null && rightPiece.GetComponent<PieceBehavior>().Type == myType)
+            (int, int) rightIdx = AdjacentTo(piece, PushDirection.RIGHT);
+            if (rightIdx != (-1, -1))
             {
-                piecesOfSameType.AddRange(CheckPiece(rightPiece, map));
+                GameObject rightPiece = GetPiece(rightIdx);
+                if (rightPiece.GetComponent<PieceBehavior>().Type == myType)
+                {
+                    piecesOfSameType.AddRange(CheckPiece(rightPiece, map));
+                }
             }
-            GameObject downPiece = DownOf(piece);
-            if (downPiece != null && downPiece.GetComponent<PieceBehavior>().Type == myType)
+            (int, int) downIdx = AdjacentTo(piece, PushDirection.DOWN);
+            if (downIdx != (-1, -1))
             {
-                piecesOfSameType.AddRange(CheckPiece(downPiece, map));
+                GameObject downPiece = GetPiece(downIdx);
+                if (downPiece.GetComponent<PieceBehavior>().Type == myType)
+                {
+                    piecesOfSameType.AddRange(CheckPiece(downPiece, map));
+                }
             }
-            GameObject leftPiece = LeftOf(piece);
-            if (leftPiece != null && leftPiece.GetComponent<PieceBehavior>().Type == myType)
+            (int, int) leftIdx = AdjacentTo(piece, PushDirection.LEFT);
+            if (leftIdx != (-1, -1))
             {
-                piecesOfSameType.AddRange(CheckPiece(leftPiece, map));
+                GameObject leftPiece = GetPiece(leftIdx);
+                if (leftPiece.GetComponent<PieceBehavior>().Type == myType)
+                {
+                    piecesOfSameType.AddRange(CheckPiece(leftPiece, map));
+                }
             }
         }
         return piecesOfSameType;
@@ -370,17 +430,17 @@ public class GameBoardBehavior : MonoBehaviour
         {
             // This for loop takes into account 'fromDir' which allows the order of operations to
             // prefer one direction over the others when considering the next step; preference moves clockwise.
-            GameObject next = null;
+            (int, int) next = (-1, -1);
             for (int i = 0; i < 4; i++)
             {
-                     if (((int)pushDir + i) % 4 == 0) { next = UpOf(start);     pushDir = PushDirection.UP; }
-                else if (((int)pushDir + i) % 4 == 1) { next = RightOf(start);  pushDir = PushDirection.RIGHT; }
-                else if (((int)pushDir + i) % 4 == 2) { next = DownOf(start);   pushDir = PushDirection.DOWN; }
-                else if (((int)pushDir + i) % 4 == 3) { next = LeftOf(start);   pushDir = PushDirection.LEFT; }
-                if (next != null && tempMap.IsUnmarked(IndexOf(next)) && !foundFlag)
+                     if (((int)pushDir + i) % 4 == 0) { next = AdjacentTo(start, PushDirection.UP);     pushDir = PushDirection.UP; }
+                else if (((int)pushDir + i) % 4 == 1) { next = AdjacentTo(start, PushDirection.RIGHT);  pushDir = PushDirection.RIGHT; }
+                else if (((int)pushDir + i) % 4 == 2) { next = AdjacentTo(start, PushDirection.DOWN);   pushDir = PushDirection.DOWN; }
+                else if (((int)pushDir + i) % 4 == 3) { next = AdjacentTo(start, PushDirection.LEFT);   pushDir = PushDirection.LEFT; }
+                if (next != (-1, -1) && tempMap.IsUnmarked(next) && !foundFlag)
                 {
                     pathVar.Push(new GameMove(start, pushDir, IndexOf(start)));
-                    FindPath(next, end, pushDir, pathVar, tempMap, ref foundFlag);
+                    FindPath(GetPiece(next), end, pushDir, pathVar, tempMap, ref foundFlag);
                 }
             }
         }
@@ -447,7 +507,7 @@ public class GameBoardBehavior : MonoBehaviour
             while (temp.Count > 0)
             {
                 GameMove next = temp.Pop();
-                _board.pieces[next.toIndex.Item1, next.toIndex.Item2] = next.pieceToMove;
+                _board.SetPiece(next.toIndex, next.pieceToMove);
                 PieceBehavior pb = next.pieceToMove.GetComponent<PieceBehavior>();
                 pb.MoveTo(next.nextPositionOfPiece);
                 pieces.Add(pb);
@@ -456,7 +516,7 @@ public class GameBoardBehavior : MonoBehaviour
             yield return new WaitUntil(() => {
                 foreach (PieceBehavior pb in pieces)
                 {
-                    if (pb.IsAnimating())
+                    if (pb.animating)
                     {
                         return false;
                     }
@@ -477,7 +537,7 @@ public class GameBoardBehavior : MonoBehaviour
             while (_moves.Count > 0)
             {
                 GameMove next = _moves.Pop();
-                _board.pieces[next.fromIndex.Item1, next.fromIndex.Item2] = next.pieceToMove;
+                _board.SetPiece(next.fromIndex, next.pieceToMove);
                 PieceBehavior pb = next.pieceToMove.GetComponent<PieceBehavior>();
                 pb.MoveTo(next.previousPositionOfPiece);
                 pieces.Add(pb);
@@ -486,7 +546,7 @@ public class GameBoardBehavior : MonoBehaviour
             yield return new WaitUntil(() => {
                 foreach (PieceBehavior pb in pieces)
                 {
-                    if (pb.IsAnimating())
+                    if (pb.animating)
                     {
                         return false;
                     }

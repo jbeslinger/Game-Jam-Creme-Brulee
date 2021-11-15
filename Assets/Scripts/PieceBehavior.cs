@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
@@ -29,20 +30,24 @@ public class PieceBehavior : MonoBehaviour
             switch (State)
             {
                 case PieceState.SITTING:
+                    animating = false;
                     _coll.enabled = true;
                     break;
                 case PieceState.GRABBED:
                     _coll.enabled = false;
                     break;
                 case PieceState.MOVING:
+                    animating = true;
                     _coll.enabled = false;
                     break;
                 case PieceState.POPPED:
+                    animating = true;
                     _coll.enabled = false;
                     break;
                 case PieceState.PREVIEW:
                     // Cannot transition from GRABBED TO PREVIEW
                     _state = fromState == PieceState.GRABBED ? PieceState.GRABBED : PieceState.PREVIEW;
+                    animating = _state == PieceState.PREVIEW ? true : false;
                     break;
             }
         }
@@ -89,7 +94,7 @@ public class PieceBehavior : MonoBehaviour
     #endregion
 
     #region Fields
-    private bool _hardened = false;
+    public bool animating;
     #endregion
 
     #region Members
@@ -100,6 +105,8 @@ public class PieceBehavior : MonoBehaviour
 
     private PieceState _state = PieceState.SITTING;
     private PieceType _pieceType = PieceType.WHI;
+
+    private bool _hardened = false;
 
     [SerializeField]
     private GameObject _arrowIndicator;
@@ -132,6 +139,24 @@ public class PieceBehavior : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            Hardened = !Hardened;
+        }
+        else if (Input.GetKeyDown(KeyCode.P))
+        {
+            if (State == PieceState.POPPED)
+            {
+                Revive();
+            }
+            else if (State == PieceState.SITTING)
+            {
+                Break();
+            }
+        }
+#endif
+
         switch (State)
         {
             case PieceState.SITTING:
@@ -251,12 +276,7 @@ public class PieceBehavior : MonoBehaviour
         _arrowIndicator.transform.rotation = Quaternion.Euler(0.0f, 0.0f, degrees);
     }
 
-    public bool IsAnimating()
-    {
-        return State == PieceState.MOVING;
-    }
-
-    public void Pop()
+    public void Break()
     {
         State = PieceState.POPPED;
         _anim.SetTrigger("Popped");
