@@ -41,7 +41,6 @@ public class PieceBehavior : MonoBehaviour
                     _coll.enabled = false;
                     break;
                 case PieceState.POPPED:
-                    animating = true;
                     _coll.enabled = false;
                     break;
                 case PieceState.PREVIEW:
@@ -191,7 +190,11 @@ public class PieceBehavior : MonoBehaviour
     #endregion
 
     #region Methods
-    public void MoveTo(Vector2 targetPos)
+    /// <summary>
+    /// Animate the piece to slide into a targetPosition.
+    /// </summary>
+    /// <param name="targetPos"></param>
+    private void MoveTo(Vector2 targetPos)
     {
         if (State != PieceState.MOVING)
         {
@@ -200,6 +203,15 @@ public class PieceBehavior : MonoBehaviour
             _framesElapsed = 0;
             _journeyLength = Vector2.Distance(transform.localPosition, _targetPos);
         }
+    }
+
+    /// <summary>
+    /// Overridden MoveTo that takes the index on the board you want the piece to move to and translates it to Vector2.
+    /// </summary>
+    /// <param name="targetIndex">An index on the board; column then row.</param>
+    public void MoveTo((int, int) targetIndex)
+    {
+        MoveTo(new Vector2(targetIndex.Item1, -targetIndex.Item2));
     }
 
     public void PreviewMoveTo(Vector2 targetPos)
@@ -279,6 +291,7 @@ public class PieceBehavior : MonoBehaviour
     public void Break()
     {
         State = PieceState.POPPED;
+        animating = true;
         _anim.SetTrigger("Popped");
     }
 
@@ -286,6 +299,18 @@ public class PieceBehavior : MonoBehaviour
     {
         State = PieceState.SITTING;
         _anim.SetTrigger("Revived");
+    }
+
+    public void SetAnimating(int to)
+    {
+        if (to >= 1)
+        {
+            animating = true;
+        }
+        else
+        {
+            animating = false;
+        }
     }
 
     public override string ToString()

@@ -16,7 +16,30 @@ public class GameBoardBehavior : MonoBehaviour
     #endregion
 
     #region Properties
-    private BoardState State { get => _state; set => ChangeState(value); }
+    public bool IsBusy { get => State != BoardState.READY; }
+
+    private BoardState State
+    {
+        get => _state;
+        set
+        {
+            if (_state == value)
+            {
+                return;
+            }
+            BoardState fromState = _state;
+            _state = value;
+            switch (State)
+            {
+                case BoardState.READY:
+                    break;
+                case BoardState.PAUSED:
+                    break;
+                case BoardState.CHECKING:
+                    break;
+            }
+        }
+    }
     #endregion
 
     #region Fields
@@ -77,7 +100,18 @@ public class GameBoardBehavior : MonoBehaviour
                 break;
             case BoardState.REFILLING:
                 State = BoardState.PAUSED;
-                StartCoroutine(RefillBoard(() => { State = BoardState.READY; }));
+                StartCoroutine(RefillBoard(() =>
+                {
+                    MatchResult result = GetMatches();
+                    if (result.Valid)
+                    {
+                        State = BoardState.CHECKING;
+                    }
+                    else
+                    {
+                        State = BoardState.READY;
+                    }
+                }));
                 break;
         }
 
@@ -118,11 +152,18 @@ public class GameBoardBehavior : MonoBehaviour
 
     /// <summary>
     /// Shorthand way of setting a spot in the board's array to a piece.
+    /// If piece is already on the board, it will set the previous index to null.
     /// </summary>
     /// <param name="index"></param>
     /// <param name="piece"></param>
     public void SetPiece((int, int) index, GameObject piece)
     {
+        (int, int) currentIndex = IndexOf(piece);
+        // If the piece is in the board already, replace that index with null
+        if (currentIndex != (-1, -1))
+        {
+            pieces[currentIndex.Item1, currentIndex.Item2] = null;
+        }
         pieces[index.Item1, index.Item2] = piece;
     }
 
@@ -184,6 +225,12 @@ public class GameBoardBehavior : MonoBehaviour
         StartCoroutine(_turns.Pop().UndoExecution(() => { State = BoardState.READY; }));
     }
 
+    /// <summary>
+    /// Pops all bubbles in a MatchResult and then invokes the callback.
+    /// </summary>
+    /// <param name="matches"></param>
+    /// <param name="callback"></param>
+    /// <returns></returns>
     private IEnumerator BreakMatchingBubbles(MatchResult matches, Action callback)
     {
         List<PieceBehavior> piecesBeingDestroyed = new List<PieceBehavior>();
@@ -250,6 +297,59 @@ public class GameBoardBehavior : MonoBehaviour
     }
 
     /// <summary>
+    /// Scans the whole board and adds new pieces while moving all pieces up to fill empty spots.
+    /// </summary>
+    private IEnumerator RefillBoard(Action callback)
+    {
+        List<PieceBehavior> movingPieces = new List<PieceBehavior>();
+        int numberOfNewPiecesPerRow = 0;
+        for (int col = 0; col < BOARD_SIZE; col++)
+        {
+            for (int row = 0; row < BOARD_SIZE; row++)
+            {
+                if (GetPiece((col, row)) == null)
+                {
+                    GameObject pieceToReplaceEmptySpace = null;
+                    for (int i = row + 1; i < BOARD_SIZE; i++)
+                    {
+                        pieceToReplaceEmptySpace = GetPiece((col, i));
+                        if (pieceToReplaceEmptySpace != null)
+                        {
+                            break;
+                        }
+                    }
+                    if (pieceToReplaceEmptySpace == null)
+                    {
+                        pieceToReplaceEmptySpace = Instantiate(_piecePrefab, this.transform);
+                        pieceToReplaceEmptySpace.GetComponent<PieceBehavior>().Type = (PieceBehavior.PieceType)UnityEngine.Random.Range(0, 7);
+                        pieceToReplaceEmptySpace.transform.position = new Vector2(col, -(BOARD_SIZE + numberOfNewPiecesPerRow)) + (Vector2)transform.position;
+                        numberOfNewPiecesPerRow += 1;
+                    }
+                    SetPiece((col, row), pieceToReplaceEmptySpace);
+                    movingPieces.Add(pieceToReplaceEmptySpace.GetComponent<PieceBehavior>());
+                    yield return new WaitForEndOfFrame();
+                    pieceToReplaceEmptySpace.GetComponent<PieceBehavior>().MoveTo((col, row));
+                }
+            }
+            numberOfNewPiecesPerRow = 0;
+        }
+
+        yield return new WaitUntil(() => {
+            foreach (PieceBehavior pb in movingPieces)
+            {
+                if (pb.animating)
+                {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        callback?.Invoke();
+        yield return null;
+    }
+
+    /// <summary>
     /// Clears the board and destroys all piece GameObjects.
     /// </summary>
     private void ClearBoard()
@@ -265,20 +365,6 @@ public class GameBoardBehavior : MonoBehaviour
             }
         }
         this.pieces = new GameObject[BOARD_SIZE, BOARD_SIZE];
-    }
-
-    /// <summary>
-    /// Scans the whole board and adds new pieces while moving all pieces up to fill empty spots.
-    /// </summary>
-    private IEnumerator RefillBoard(Action callback)
-    {
-        for (int col = 0; col < BOARD_SIZE; col++)
-        {
-
-        }
-
-        callback?.Invoke();
-        yield return null;
     }
 
     private (int, int) AdjacentTo(GameObject piece, PushDirection directionOf)
@@ -449,29 +535,6 @@ public class GameBoardBehavior : MonoBehaviour
             pathVar.Pop();
         }
     }
-    
-    /// <summary>
-    /// Called by the property 'State' at add some entry/exit functionality.
-    /// </summary>
-    /// <param name="newState"></param>
-    private void ChangeState(BoardState newState)
-    {
-        if (_state == newState)
-        {
-            return;
-        }
-        BoardState fromState = _state;
-        _state = newState;
-        switch (State)
-        {
-            case BoardState.READY:
-                break;
-            case BoardState.PAUSED:
-                break;
-            case BoardState.CHECKING:
-                break;
-        }
-    }
     #endregion
 
 
@@ -509,7 +572,7 @@ public class GameBoardBehavior : MonoBehaviour
                 GameMove next = temp.Pop();
                 _board.SetPiece(next.toIndex, next.pieceToMove);
                 PieceBehavior pb = next.pieceToMove.GetComponent<PieceBehavior>();
-                pb.MoveTo(next.nextPositionOfPiece);
+                pb.MoveTo(next.toIndex);
                 pieces.Add(pb);
             }
 
@@ -539,7 +602,7 @@ public class GameBoardBehavior : MonoBehaviour
                 GameMove next = _moves.Pop();
                 _board.SetPiece(next.fromIndex, next.pieceToMove);
                 PieceBehavior pb = next.pieceToMove.GetComponent<PieceBehavior>();
-                pb.MoveTo(next.previousPositionOfPiece);
+                pb.MoveTo(next.fromIndex);
                 pieces.Add(pb);
             }
 

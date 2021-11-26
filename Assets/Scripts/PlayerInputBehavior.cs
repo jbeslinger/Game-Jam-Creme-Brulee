@@ -38,6 +38,11 @@ public class PlayerInputBehavior : MonoBehaviour
 
     private void Update()
     {
+        if (_gb.IsBusy)
+        {
+            return;
+        }
+
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
         /* ON MOUSE CLICK */
@@ -94,7 +99,7 @@ public class PlayerInputBehavior : MonoBehaviour
                 }
                 else
                 {
-                    _selectedObj.GetComponent<PieceBehavior>().MoveTo(_lastPosition);
+                    _selectedObj.GetComponent<PieceBehavior>().MoveTo(_gb.IndexOf(_selectedObj));
                 }
             }
             _selectedObj = null;
