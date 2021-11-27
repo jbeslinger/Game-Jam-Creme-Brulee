@@ -9,6 +9,7 @@ public class GameBoardBehavior : MonoBehaviour
 {
     #region Consts
     private const int BOARD_SIZE = 8;
+    private const int BASE_SCORE = 2;
     #endregion
 
     #region Enums
@@ -53,7 +54,7 @@ public class GameBoardBehavior : MonoBehaviour
     #endregion
 
     #region Members
-    private int score = 0;
+    private int _score = 0;
 
     private BoardState _state = BoardState.READY;
 
@@ -236,10 +237,10 @@ public class GameBoardBehavior : MonoBehaviour
     private void AwardPoints(int numberOfPieces, int combo)
     {
         numberOfPieces -= 2;
-        score += (int) (Mathf.Pow(2, numberOfPieces) * 100 * combo);
+        _score += (int) (Mathf.Pow(BASE_SCORE, numberOfPieces) * 100 * combo);
         if (OnScore != null)
         {
-            OnScore(score);
+            OnScore(_score);
         }
     }
 
