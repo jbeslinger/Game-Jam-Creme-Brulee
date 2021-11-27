@@ -3,12 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class GameBoardBehavior : MonoBehaviour
 {
     #region Consts
     private const int BOARD_SIZE = 8;
-    private const int POINT_REWARD = 200;
     #endregion
 
     #region Enums
@@ -29,9 +29,10 @@ public class GameBoardBehavior : MonoBehaviour
             }
             BoardState fromState = _state;
             _state = value;
-            switch (State)
+            switch (_state)
             {
                 case BoardState.READY:
+                    EndOfTurn();
                     break;
                 case BoardState.PAUSED:
                     break;
@@ -44,9 +45,13 @@ public class GameBoardBehavior : MonoBehaviour
 
     #region Fields
     public GameObject[,] pieces;
+    public delegate void OnScoreDelegate(int score);
+    public event OnScoreDelegate OnScore;
     #endregion
 
     #region Members
+    private int score = 0;
+
     private BoardState _state = BoardState.READY;
 
     [SerializeField] private GameObject _piecePrefab;
@@ -226,6 +231,21 @@ public class GameBoardBehavior : MonoBehaviour
     }
 
     /// <summary>
+    /// Adds points to the player's score on this board. Make the combo negative if you want to take points away.
+    /// </summary>
+    /// <param name="numberOfPieces"></param>
+    /// <param name="combo"></param>
+    private void AwardPoints(int numberOfPieces, int combo)
+    {
+        numberOfPieces -= 2;
+        score += (int) (Mathf.Pow(2, numberOfPieces) * 100 * combo);
+        if (OnScore != null)
+        {
+            OnScore(score);
+        }
+    }
+
+    /// <summary>
     /// Pops all bubbles in a MatchResult and then invokes the callback.
     /// </summary>
     /// <param name="matches"></param>
@@ -234,8 +254,10 @@ public class GameBoardBehavior : MonoBehaviour
     private IEnumerator BreakMatchingBubbles(MatchResult matches, Action callback)
     {
         List<PieceBehavior> piecesBeingDestroyed = new List<PieceBehavior>();
+        int combo = 0;
         foreach(List<GameObject> match in matches.Matches)
         {
+            AwardPoints(match.Count, combo + 1);
             foreach(GameObject piece in match)
             {
                 (int, int) idx = IndexOf(piece);
@@ -533,6 +555,42 @@ public class GameBoardBehavior : MonoBehaviour
         if (!foundFlag)
         {
             pathVar.Pop();
+        }
+    }
+
+    /// <summary>
+    /// Randomly hardens a number of pieces.
+    /// </summary>
+    /// <param name="toFreeze">Max number of pieces you want to freeze.</param>
+    /// <param name="chanceToFreeze">Normalized percent chance to freeze any piece.</param>
+    private void RandomlyFreezePieces(int toFreeze, float chanceToFreeze)
+    {
+        for (int i = 0; i < toFreeze; i++)
+        {
+            float roll = (float)UnityEngine.Random.Range(1, 101) / 100f;
+            if (roll <= chanceToFreeze)
+            {
+                Debug.Log("I froze a piece just now.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called at the end of every turn.
+    /// </summary>
+    private void EndOfTurn()
+    {
+        // On the fifth turn, harden a piece no matter what to teach the player
+        if (_turns.Count == 5)
+        {
+            RandomlyFreezePieces(1, 1.0f);
+        }
+        // From there on, follow a quadratic formula for chance and increase the number of pieces to
+        // potentially freeze by 1 every 5 turns
+        else if (_turns.Count > 5)
+        {
+            float chance = Mathf.Pow(_turns.Count, 2) / 1028f;
+            RandomlyFreezePieces(_turns.Count / 5, chance);
         }
     }
     #endregion
