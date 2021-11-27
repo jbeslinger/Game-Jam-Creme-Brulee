@@ -87,7 +87,10 @@ public class PieceBehavior : MonoBehaviour
     public bool Hardened { get => _hardened; set
         {
             _hardened = value;
-            _anim.SetBool("Hardened", value);
+            if (_hardened)
+            {
+                _hardFlag = true;
+            }
         }
     }
     #endregion
@@ -106,6 +109,7 @@ public class PieceBehavior : MonoBehaviour
     private PieceType _pieceType = PieceType.WHI;
 
     private bool _hardened = false;
+    private bool _hardFlag = false;
 
     [SerializeField]
     private GameObject _arrowIndicator;
@@ -167,6 +171,12 @@ public class PieceBehavior : MonoBehaviour
                     _framesElapsed += (1f / 60f);
                 }
                 break;
+        }
+
+        if (_hardFlag)
+        {
+            _hardFlag = false;
+            _anim.SetBool("Hardened", true);
         }
     }
     #endregion

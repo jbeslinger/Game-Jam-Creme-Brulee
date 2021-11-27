@@ -78,7 +78,7 @@ public class GameBoardBehavior : MonoBehaviour
         }
         else
         {
-            GenerateNewBoard();
+            GenerateNewBoard(0);
         }
     }
 
@@ -286,7 +286,7 @@ public class GameBoardBehavior : MonoBehaviour
     /// <summary>
     /// Generate a new board and guarantee there will be at most 2 pieces of same color touching.
     /// </summary>
-    private void GenerateNewBoard()
+    private void GenerateNewBoard(int numberOfFrozenPieces)
     {
         ClearBoard();
         Vector2 offset = this.transform.position;
@@ -316,6 +316,8 @@ public class GameBoardBehavior : MonoBehaviour
             }
             result = GetMatches();
         }
+
+        RandomlyFreezePieces(numberOfFrozenPieces, 1.0f);
     }
 
     /// <summary>
@@ -574,7 +576,15 @@ public class GameBoardBehavior : MonoBehaviour
             if (roll <= chanceToFreeze)
             {
                 (int, int) randomIdx = (UnityEngine.Random.Range(0, BOARD_SIZE), UnityEngine.Random.Range(0, BOARD_SIZE));
-                GetPiece(randomIdx).GetComponent<PieceBehavior>().Hardened = true;
+                PieceBehavior pieceToFreeze = GetPiece(randomIdx).GetComponent<PieceBehavior>();
+                if (pieceToFreeze.Hardened)
+                {
+                    i -= 1;
+                }
+                else
+                {
+                    GetPiece(randomIdx).GetComponent<PieceBehavior>().Hardened = true;
+                }
             }
         }
     }
