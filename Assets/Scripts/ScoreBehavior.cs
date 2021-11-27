@@ -33,7 +33,7 @@ public class ScoreBehavior : MonoBehaviour
     #region Methods
     public void UpdateScore(int score)
     {
-        _text.text = string.Format("SCORE: {0}", score);
+        _text.text = string.Format("SCORE: {0:n0}", score);
     }
     #endregion
 

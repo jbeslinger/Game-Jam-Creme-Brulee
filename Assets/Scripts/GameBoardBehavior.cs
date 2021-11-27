@@ -32,7 +32,10 @@ public class GameBoardBehavior : MonoBehaviour
             switch (_state)
             {
                 case BoardState.READY:
-                    EndOfTurn();
+                    if (_turnOver)
+                    {
+                        EndOfTurn();
+                    }
                     break;
                 case BoardState.PAUSED:
                     break;
@@ -57,6 +60,8 @@ public class GameBoardBehavior : MonoBehaviour
     [SerializeField] private GameObject _piecePrefab;
     private List<GameObject> _previewObjects = new List<GameObject>();
     private Stack<BoardTurn> _turns = new Stack<BoardTurn>();
+
+    private bool _turnOver = false;
     #endregion
 
     #region Unity Methods
@@ -78,18 +83,6 @@ public class GameBoardBehavior : MonoBehaviour
 
     private void Update()
     {
-#if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.Z) && _turns.Count > 0)
-        {
-            UndoLastTurn();
-        }
-        else if (Input.GetKeyDown(KeyCode.H))
-        {
-            RandomlyFreezePieces(1, 1.0f);
-        }
-#endif
-
-
         switch (State)
         {
             case BoardState.READY:
@@ -124,8 +117,6 @@ public class GameBoardBehavior : MonoBehaviour
                 }));
                 break;
         }
-
-        
     }
     #endregion
 
@@ -223,6 +214,7 @@ public class GameBoardBehavior : MonoBehaviour
         BoardTurn nextTurn = new BoardTurn(_pathToEmptySpot, this);
         StartCoroutine(nextTurn.Execute(() => { State = BoardState.CHECKING; }));
         _turns.Push(nextTurn);
+        _turnOver = true;
     }
 
     /// <summary>
@@ -231,6 +223,7 @@ public class GameBoardBehavior : MonoBehaviour
     public void UndoLastTurn()
     {
         // TODO: Make sure the player loses points by undoing if necessary.
+        _turnOver = false;
         State = BoardState.PAUSED;
         StartCoroutine(_turns.Pop().UndoExecution(() => { State = BoardState.READY; }));
     }
@@ -271,6 +264,7 @@ public class GameBoardBehavior : MonoBehaviour
                 piecesBeingDestroyed.Add(pb);
                 pb.Break();
             }
+            combo += 1;
         }
 
         yield return new WaitUntil(() => {
@@ -589,6 +583,8 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     private void EndOfTurn()
     {
+        Debug.Log("Turn ended.");
+
         // On the fifth turn, harden a piece no matter what to teach the player
         if (_turns.Count == 5)
         {
