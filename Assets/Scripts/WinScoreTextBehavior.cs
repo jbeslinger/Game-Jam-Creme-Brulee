@@ -1,11 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Text))]
-public class ScoreBehavior : MonoBehaviour
+public class WinScoreTextBehavior : MonoBehaviour
 {
     #region Fields
     public GameBoardBehavior board;
@@ -25,16 +24,15 @@ public class ScoreBehavior : MonoBehaviour
         }
         else
         {
-            board.OnScore += UpdateScore;
+            board.OnWinConditionChange += UpdateWinCondition;
         }
     }
     #endregion
 
     #region Methods
-    public void UpdateScore(int score)
+    public void UpdateWinCondition(int pointsToWin)
     {
-        _text.text = string.Format("SCORE: {0:n0}", score);
+        _text.text = string.Format("TO WIN: {0:n0}", pointsToWin);
     }
     #endregion
-
 }

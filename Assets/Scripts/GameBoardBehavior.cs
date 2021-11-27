@@ -18,7 +18,6 @@ public class GameBoardBehavior : MonoBehaviour
 
     #region Properties
     public bool IsBusy { get => State != BoardState.READY; }
-
     private BoardState State
     {
         get => _state;
@@ -45,15 +44,36 @@ public class GameBoardBehavior : MonoBehaviour
             }
         }
     }
+    public int PointsToWin
+    {
+        get => _pointsToWin;
+        set
+        {
+            if (OnWinConditionChange != null)
+            {
+                OnWinConditionChange(value);
+            }
+            else
+            {
+                Debug.LogError("You never subscribed to the OnWinConditionChange event, jackass.");
+            }
+            _pointsToWin = value;
+        }
+    }
     #endregion
 
     #region Fields
     public GameObject[,] pieces;
+    
     public delegate void OnScoreDelegate(int score);
     public event OnScoreDelegate OnScore;
+
+    public delegate void OnWinConditionChangeDelegate(int pointsToWin);
+    public OnWinConditionChangeDelegate OnWinConditionChange;
     #endregion
 
     #region Members
+    private int _pointsToWin;
     private int _score = 0;
 
     private BoardState _state = BoardState.READY;
@@ -78,7 +98,7 @@ public class GameBoardBehavior : MonoBehaviour
         }
         else
         {
-            GenerateNewBoard(0);
+            GenerateNewBoard(50000, 0);
         }
     }
 
@@ -286,8 +306,9 @@ public class GameBoardBehavior : MonoBehaviour
     /// <summary>
     /// Generate a new board and guarantee there will be at most 2 pieces of same color touching.
     /// </summary>
-    private void GenerateNewBoard(int numberOfFrozenPieces)
+    private void GenerateNewBoard(int pointsToWin, int numberOfFrozenPieces)
     {
+        PointsToWin = pointsToWin;
         ClearBoard();
         Vector2 offset = this.transform.position;
         for (int col = 0; col < BOARD_SIZE; col++)
