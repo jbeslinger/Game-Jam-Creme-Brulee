@@ -51,9 +51,12 @@ public class PlayerInputBehavior : MonoBehaviour
             RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
             if (hit.collider != null && hit.collider.gameObject.GetComponent<PieceBehavior>() != null)
             {
-                _selectedObj = hit.collider.gameObject;
-                _selectedObj.GetComponent<PieceBehavior>().State = PieceBehavior.PieceState.GRABBED;
-                _lastPosition = _selectedObj.transform.localPosition;
+                if (!hit.collider.GetComponent<PieceBehavior>().Hardened)
+                {
+                    _selectedObj = hit.collider.gameObject;
+                    _selectedObj.GetComponent<PieceBehavior>().State = PieceBehavior.PieceState.GRABBED;
+                    _lastPosition = _selectedObj.transform.localPosition;
+                }
             }
         }
 
@@ -61,7 +64,7 @@ public class PlayerInputBehavior : MonoBehaviour
         else if (Input.GetMouseButton(0))
         {
             RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
-            if (hit.collider != null && hit.collider.gameObject.GetComponent<PieceBehavior>() != null)
+            if (_selectedObj != null && hit.collider != null && hit.collider.gameObject.GetComponent<PieceBehavior>() != null)
             {
                 if (_hasRequestedPreview &&
                     (hit.collider.gameObject != _objUnderCursor ||
@@ -71,9 +74,12 @@ public class PlayerInputBehavior : MonoBehaviour
                 }
                 else
                 {
-                    _objUnderCursor = hit.collider.gameObject;
-                    _directionToPush = CalculatePushDirection(_objUnderCursor, mousePos);
-                    PreviewPlacement();
+                    if (!hit.collider.GetComponent<PieceBehavior>().Hardened)
+                    {
+                        _objUnderCursor = hit.collider.gameObject;
+                        _directionToPush = CalculatePushDirection(_objUnderCursor, mousePos);
+                        PreviewPlacement();
+                    }
                 }
 
             }

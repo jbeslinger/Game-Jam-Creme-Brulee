@@ -138,24 +138,6 @@ public class PieceBehavior : MonoBehaviour
 
     private void Update()
     {
-#if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            Hardened = !Hardened;
-        }
-        else if (Input.GetKeyDown(KeyCode.P))
-        {
-            if (State == PieceState.POPPED)
-            {
-                Revive();
-            }
-            else if (State == PieceState.SITTING)
-            {
-                Break();
-            }
-        }
-#endif
-
         switch (State)
         {
             case PieceState.SITTING:

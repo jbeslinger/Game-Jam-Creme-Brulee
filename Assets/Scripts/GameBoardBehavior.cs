@@ -83,7 +83,12 @@ public class GameBoardBehavior : MonoBehaviour
         {
             UndoLastTurn();
         }
+        else if (Input.GetKeyDown(KeyCode.H))
+        {
+            RandomlyFreezePieces(1, 1.0f);
+        }
 #endif
+
 
         switch (State)
         {
@@ -547,8 +552,11 @@ public class GameBoardBehavior : MonoBehaviour
                 else if (((int)pushDir + i) % 4 == 3) { next = AdjacentTo(start, PushDirection.LEFT);   pushDir = PushDirection.LEFT; }
                 if (next != (-1, -1) && tempMap.IsUnmarked(next) && !foundFlag)
                 {
-                    pathVar.Push(new GameMove(start, pushDir, IndexOf(start)));
-                    FindPath(GetPiece(next), end, pushDir, pathVar, tempMap, ref foundFlag);
+                    if (!GetPiece(next).GetComponent<PieceBehavior>().Hardened)
+                    {
+                        pathVar.Push(new GameMove(start, pushDir, IndexOf(start)));
+                        FindPath(GetPiece(next), end, pushDir, pathVar, tempMap, ref foundFlag);
+                    }
                 }
             }
         }
@@ -570,7 +578,8 @@ public class GameBoardBehavior : MonoBehaviour
             float roll = (float)UnityEngine.Random.Range(1, 101) / 100f;
             if (roll <= chanceToFreeze)
             {
-                Debug.Log("I froze a piece just now.");
+                (int, int) randomIdx = (UnityEngine.Random.Range(0, BOARD_SIZE), UnityEngine.Random.Range(0, BOARD_SIZE));
+                GetPiece(randomIdx).GetComponent<PieceBehavior>().Hardened = true;
             }
         }
     }
@@ -589,8 +598,8 @@ public class GameBoardBehavior : MonoBehaviour
         // potentially freeze by 1 every 5 turns
         else if (_turns.Count > 5)
         {
-            float chance = Mathf.Pow(_turns.Count, 2) / 1028f;
-            RandomlyFreezePieces(_turns.Count / 5, chance);
+            float chance = Mathf.Pow(_turns.Count, 2) / 8192;
+            RandomlyFreezePieces(_turns.Count / 10, chance);
         }
     }
     #endregion
