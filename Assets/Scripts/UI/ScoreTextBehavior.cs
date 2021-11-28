@@ -25,7 +25,7 @@ public class ScoreTextBehavior : MonoBehaviour
         }
         else
         {
-            board.OnScore += UpdateScore;
+            board.OnScoreChange += UpdateScore;
         }
     }
     #endregion

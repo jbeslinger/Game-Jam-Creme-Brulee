@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class GameBoardBehavior : MonoBehaviour
 {
     #region Consts
-    private const int BOARD_SIZE = 8;
-    private const int BASE_SCORE = 2;
+    private const int BOARD_SIZE = 8; // 8 x 8 board size
+    private const int BASE_SCORE = 2; // Base score of 2 = 200 points for 3 pieces, 2^2*100 for 4
     #endregion
 
     #region Enums
@@ -44,6 +45,18 @@ public class GameBoardBehavior : MonoBehaviour
             }
         }
     }
+    public int Score
+    {
+        get => _score;
+        set
+        {
+            if (OnScoreChange != null)
+            {
+                OnScoreChange(value);
+            }
+            _score = value;
+        }
+    }
     public int PointsToWin
     {
         get => _pointsToWin;
@@ -65,8 +78,8 @@ public class GameBoardBehavior : MonoBehaviour
     #region Fields
     public GameObject[,] pieces;
     
-    public delegate void OnScoreDelegate(int score);
-    public event OnScoreDelegate OnScore;
+    public delegate void OnScoreChangeDelegate(int newScore);
+    public event OnScoreChangeDelegate OnScoreChange;
 
     public delegate void OnWinConditionChangeDelegate(int pointsToWin);
     public OnWinConditionChangeDelegate OnWinConditionChange;
@@ -98,7 +111,7 @@ public class GameBoardBehavior : MonoBehaviour
         }
         else
         {
-            GenerateNewBoard(50000, 0);
+            GenerateNewBoard(100000, 0);
         }
     }
 
@@ -257,10 +270,10 @@ public class GameBoardBehavior : MonoBehaviour
     private void AwardPoints(int numberOfPieces, int combo)
     {
         numberOfPieces -= 2;
-        _score += (int) (Mathf.Pow(BASE_SCORE, numberOfPieces) * 100 * combo);
-        if (OnScore != null)
+        Score += (int) (Mathf.Pow(BASE_SCORE, numberOfPieces) * 100 * combo);
+        if (OnScoreChange != null)
         {
-            OnScore(_score);
+            OnScoreChange(Score);
         }
     }
 
@@ -615,8 +628,6 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     private void EndOfTurn()
     {
-        Debug.Log("Turn ended.");
-
         // On the fifth turn, harden a piece no matter what to teach the player
         if (_turns.Count == 5)
         {
@@ -628,6 +639,21 @@ public class GameBoardBehavior : MonoBehaviour
         {
             float chance = Mathf.Pow(_turns.Count, 2) / 8192;
             RandomlyFreezePieces(_turns.Count / 10, chance);
+        }
+
+        CheckForGameWin();
+    }
+    
+    /// <summary>
+    /// Check to see if the score meets the game win condition and take action afterwards.
+    /// </summary>
+    /// <param name="currentScore"></param>
+    private void CheckForGameWin()
+    {
+        if (Score >= PointsToWin)
+        {
+            PlayerPrefs.SetInt(PrefStrings.LAST_SCORE, Score);
+            SceneManager.LoadScene(1);
         }
     }
     #endregion
