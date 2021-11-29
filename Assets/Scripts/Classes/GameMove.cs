@@ -37,7 +37,7 @@ public class GameMove
                 toIndex = (currentIndex.Item1 - 1, currentIndex.Item2);
                 break;
             case PushDirection.DIRECT:
-                break;
+                throw new Exception("PushDirection.DIRECT cannot be used here. Please use the overloaded constructor to specify start and end index instead.");
         }
         previousPositionOfPiece = new Vector2(fromIndex.Item1, -fromIndex.Item2);
         nextPositionOfPiece = new Vector2(toIndex.Item1, -toIndex.Item2);
@@ -45,6 +45,7 @@ public class GameMove
 
     /// <summary>
     /// Gross band-aid workaround constructor to make sure I can get the proper index of the grabbed piece.
+    /// Moves the piece directly into place.
     /// </summary>
     /// <param name="pieceToMove"></param>
     /// <param name="currentIndex"></param>

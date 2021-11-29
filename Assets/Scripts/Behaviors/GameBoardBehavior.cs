@@ -117,6 +117,13 @@ public class GameBoardBehavior : MonoBehaviour
 
     private void Update()
     {
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            RandomlyFreezePieces(1, 1.0f);
+        }
+#endif
+
         switch (State)
         {
             case BoardState.READY:
@@ -210,15 +217,13 @@ public class GameBoardBehavior : MonoBehaviour
     /// <param name="pushDir"></param>
     public void PreviewPlacement(GameObject pieceToPlace, GameObject pieceToPush, PushDirection pushDir)
     {
-        Stack<GameMove> temp = new Stack<GameMove>(); // Var to hold our path to the end; runs backwards
-        bool foundFlag = false; // Temp reference variable to tell the method we found the end
-        FindPath(pieceToPush, pieceToPlace, pushDir, temp, new BoardMap(), ref foundFlag);
+        Stack<GameMove> path = FindPath(pieceToPush, pieceToPlace);
         
         // Clone the steps for later use
-        _pathToEmptySpot = new Stack<GameMove>(new Stack<GameMove>(temp));
-        while (temp.Count != 0)
+        _pathToEmptySpot = new Stack<GameMove>(new Stack<GameMove>(path));
+        while (path.Count != 0)
         {
-            GameMove move = temp.Pop();
+            GameMove move = path.Pop();
             move.pieceToMove.GetComponent<PieceBehavior>().PreviewMoveTo(move.dirToMove, 0.75f);
         }
     }
@@ -240,10 +245,11 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     public void PerformMove()
     {
-        if (_pathToEmptySpot == null || _pathToEmptySpot.Count <= 0)
+        if (_pathToEmptySpot == null || _pathToEmptySpot.Count == 0)
         {
             return;
         }
+
         State = BoardState.PAUSED;
         BoardTurn nextTurn = new BoardTurn(_pathToEmptySpot, this);
         StartCoroutine(nextTurn.Execute(() => { State = BoardState.CHECKING; }));
@@ -545,56 +551,48 @@ public class GameBoardBehavior : MonoBehaviour
         return piecesOfSameType;
     }
 
-    GameObject firstPiece;
     /// <summary>
-    /// Recursive method that finds the quickest path to the empty space for the bubble to fill.
+    /// Determines the path to the empty spot on the grid and which bubbles to push where.
     /// </summary>
-    /// <param name="start"></param>
-    /// <param name="end"></param>
-    /// <param name="pathVar"></param>
-    /// <returns></returns>
-    private void FindPath(GameObject start, GameObject end, PushDirection pushDir, Stack<GameMove> pathVar, BoardMap tempMap, ref bool foundFlag)
+    /// <param name="start">The piece the player is dropping their piece on.</param>
+    /// <param name="end">The piece that the player is grabbing</param>
+    private Stack<GameMove> FindPath(GameObject start, GameObject end)
     {
-        if (firstPiece == null)
+        Stack<GameMove> path = new Stack<GameMove>();
+        (int, int) startIdx = IndexOf(start);
+        (int, int) endIdx = IndexOf(end);
+        (int, int) currentIdx = startIdx;
+
+        path.Push(new GameMove(end, endIdx, startIdx));
+
+        while (currentIdx.Item2 != endIdx.Item2)
         {
-            firstPiece = start;
-        }
-        (int,int) startIndex = IndexOf(start);
-        tempMap.Mark(startIndex);
-        (int,int) endIndex = IndexOf(end);
-        if (startIndex == endIndex)
-        {
-            // We know we're back to the piece that was grabbed, so we set direction to Direct
-            pathVar.Push(new GameMove(start, endIndex, IndexOf(firstPiece)));
-            foundFlag = true;
-            firstPiece = null;
-            return;
-        }
-        else
-        {
-            // This for loop takes into account 'fromDir' which allows the order of operations to
-            // prefer one direction over the others when considering the next step; preference moves clockwise.
-            (int, int) next = (-1, -1);
-            for (int i = 0; i < 4; i++)
+            if (currentIdx.Item2 < endIdx.Item2)
             {
-                     if (((int)pushDir + i) % 4 == 0) { next = AdjacentTo(start, PushDirection.UP);     pushDir = PushDirection.UP; }
-                else if (((int)pushDir + i) % 4 == 1) { next = AdjacentTo(start, PushDirection.RIGHT);  pushDir = PushDirection.RIGHT; }
-                else if (((int)pushDir + i) % 4 == 2) { next = AdjacentTo(start, PushDirection.DOWN);   pushDir = PushDirection.DOWN; }
-                else if (((int)pushDir + i) % 4 == 3) { next = AdjacentTo(start, PushDirection.LEFT);   pushDir = PushDirection.LEFT; }
-                if (next != (-1, -1) && tempMap.IsUnmarked(next) && !foundFlag)
-                {
-                    if (!GetPiece(next).GetComponent<PieceBehavior>().Hardened)
-                    {
-                        pathVar.Push(new GameMove(start, pushDir, IndexOf(start)));
-                        FindPath(GetPiece(next), end, pushDir, pathVar, tempMap, ref foundFlag);
-                    }
-                }
+                path.Push(new GameMove(GetPiece(currentIdx), PushDirection.DOWN, currentIdx));
+                currentIdx.Item2 += 1;
+            }
+            else
+            {
+                path.Push(new GameMove(GetPiece(currentIdx), PushDirection.UP, currentIdx));
+                currentIdx.Item2 -= 1;
             }
         }
-        if (!foundFlag)
+        while (currentIdx.Item1 != endIdx.Item1)
         {
-            pathVar.Pop();
+            if (currentIdx.Item1 < endIdx.Item1)
+            {
+                path.Push(new GameMove(GetPiece(currentIdx), PushDirection.RIGHT, currentIdx));
+                currentIdx.Item1 += 1;
+            }
+            else
+            {
+                path.Push(new GameMove(GetPiece(currentIdx), PushDirection.LEFT, currentIdx));
+                currentIdx.Item1 -= 1;
+            }
         }
+
+        return path;
     }
 
     /// <summary>
