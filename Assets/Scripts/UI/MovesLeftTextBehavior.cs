@@ -3,33 +3,32 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(Text))]
-public class WinScoreTextBehavior : MonoBehaviour
+public class MovesLeftTextBehavior : MonoBehaviour
 {
     #region Fields
     public GameBoardBehavior board;
-    #endregion
-
-    #region Members
-    private Text _text;
+    public Text numberTextBox;
     #endregion
 
     #region Unity Methods
     private void Start()
     {
-        _text = GetComponent<Text>();
+        if (numberTextBox == null)
+        {
+            throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(numberTextBox)));
+        }
         if (board == null)
         {
             throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(board)));
         }
-        board.OnWinConditionChange += UpdateWinCondition;
+        board.OnMovesLeftChange += UpdateUI;
     }
     #endregion
 
     #region Methods
-    public void UpdateWinCondition(int pointsToWin)
+    private void UpdateUI(int movesLeft)
     {
-        _text.text = string.Format("TO WIN: {0:n0}", pointsToWin);
+        numberTextBox.text = movesLeft.ToString();
     }
     #endregion
 }

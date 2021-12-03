@@ -21,17 +21,14 @@ public class ScoreTextBehavior : MonoBehaviour
         _text = GetComponent<Text>();
         if (board == null)
         {
-            throw new MissingReferenceException("Please assign a GameBoardBehavior to the field.");
+            throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(board)));
         }
-        else
-        {
-            board.OnScoreChange += UpdateScore;
-        }
+        board.OnScoreChange += UpdateUI;
     }
     #endregion
 
     #region Methods
-    public void UpdateScore(int score)
+    public void UpdateUI(int score)
     {
         _text.text = string.Format("SCORE: {0:n0}", score);
     }

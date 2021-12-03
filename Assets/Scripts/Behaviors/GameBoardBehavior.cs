@@ -11,6 +11,7 @@ public class GameBoardBehavior : MonoBehaviour
     #region Consts
     private const int BOARD_SIZE = 8; // 8 x 8 board size
     private const int BASE_SCORE = 2; // Base score of 2 = 200 points for 3 pieces, 2^2*100 for 4
+    private const int MAX_MOVES_LEFT = 3;
     #endregion
 
     #region Enums
@@ -35,6 +36,7 @@ public class GameBoardBehavior : MonoBehaviour
                 case BoardState.READY:
                     if (_turnOver)
                     {
+                        MovesLeft = MAX_MOVES_LEFT;
                         EndOfTurn();
                     }
                     break;
@@ -73,21 +75,44 @@ public class GameBoardBehavior : MonoBehaviour
             _pointsToWin = value;
         }
     }
+    public int MovesLeft
+    {
+        get => _movesLeft;
+        set
+        {
+            if (OnMovesLeftChange != null)
+            {
+                OnMovesLeftChange(value);
+            }
+            if (value < 0)
+            {
+                EndGame();
+            }
+            _movesLeft = value;
+        }
+    }
     #endregion
 
-    #region Fields
-    public GameObject[,] pieces;
-    
+    #region Events
     public delegate void OnScoreChangeDelegate(int newScore);
     public event OnScoreChangeDelegate OnScoreChange;
 
     public delegate void OnWinConditionChangeDelegate(int pointsToWin);
     public OnWinConditionChangeDelegate OnWinConditionChange;
+
+    public delegate void OnMovesLeftChangeDelegate(int movesLeft);
+    public OnMovesLeftChangeDelegate OnMovesLeftChange;
+    #endregion
+
+    #region Fields
+    public GameObject[,] pieces;
     #endregion
 
     #region Members
     private int _pointsToWin;
     private int _score = 0;
+    private int _movesLeft;
+    private int _hardenedPieces = 0;
 
     private BoardState _state = BoardState.READY;
 
@@ -120,7 +145,7 @@ public class GameBoardBehavior : MonoBehaviour
 #if UNITY_EDITOR
         if (Input.GetKeyDown(KeyCode.H))
         {
-            RandomlyFreezePieces(1, 1.0f);
+            RandomlyHardenPieces(1, 1.0f);
         }
 #endif
 
@@ -265,7 +290,7 @@ public class GameBoardBehavior : MonoBehaviour
         // TODO: Make sure the player loses points by undoing if necessary.
         _turnOver = false;
         State = BoardState.PAUSED;
-        StartCoroutine(_turns.Pop().UndoExecution(() => { State = BoardState.READY; }));
+        StartCoroutine(_turns.Pop().UndoExecution(() => { State = BoardState.READY; MovesLeft -= 1; }));
     }
 
     /// <summary>
@@ -357,7 +382,8 @@ public class GameBoardBehavior : MonoBehaviour
             result = GetMatches();
         }
 
-        RandomlyFreezePieces(numberOfFrozenPieces, 1.0f);
+        MovesLeft = MAX_MOVES_LEFT;
+        RandomlyHardenPieces(numberOfFrozenPieces, 1.0f);
     }
 
     /// <summary>
@@ -598,24 +624,25 @@ public class GameBoardBehavior : MonoBehaviour
     /// <summary>
     /// Randomly hardens a number of pieces.
     /// </summary>
-    /// <param name="toFreeze">Max number of pieces you want to freeze.</param>
-    /// <param name="chanceToFreeze">Normalized percent chance to freeze any piece.</param>
-    private void RandomlyFreezePieces(int toFreeze, float chanceToFreeze)
+    /// <param name="toHarden">Max number of pieces you want to harden.</param>
+    /// <param name="chanceToHarden">Normalized percent chance to harden any piece.</param>
+    private void RandomlyHardenPieces(int toHarden, float chanceToHarden)
     {
-        for (int i = 0; i < toFreeze; i++)
+        for (int i = 0; i < toHarden; i++)
         {
             float roll = (float)UnityEngine.Random.Range(1, 101) / 100f;
-            if (roll <= chanceToFreeze)
+            if (roll <= chanceToHarden)
             {
                 (int, int) randomIdx = (UnityEngine.Random.Range(0, BOARD_SIZE), UnityEngine.Random.Range(0, BOARD_SIZE));
-                PieceBehavior pieceToFreeze = GetPiece(randomIdx).GetComponent<PieceBehavior>();
-                if (pieceToFreeze.Hardened)
+                PieceBehavior pieceToHarden = GetPiece(randomIdx).GetComponent<PieceBehavior>();
+                if (pieceToHarden.Hardened)
                 {
                     i -= 1;
                 }
                 else
                 {
                     GetPiece(randomIdx).GetComponent<PieceBehavior>().Hardened = true;
+                    _hardenedPieces += 1;
                 }
             }
         }
@@ -629,30 +656,43 @@ public class GameBoardBehavior : MonoBehaviour
         // On the fifth turn, harden a piece no matter what to teach the player
         if (_turns.Count == 5)
         {
-            RandomlyFreezePieces(1, 1.0f);
+            RandomlyHardenPieces(1, 1.0f);
         }
         // From there on, follow a quadratic formula for chance and increase the number of pieces to
-        // potentially freeze by 1 every 5 turns
+        // potentially harden by 1 every 5 turns
         else if (_turns.Count > 5)
         {
             float chance = Mathf.Pow(_turns.Count, 2) / 8192;
-            RandomlyFreezePieces(_turns.Count / 10, chance);
+            RandomlyHardenPieces(_turns.Count / 10, chance);
         }
 
-        CheckForGameWin();
+        CheckForGameEnd();
     }
-    
+
     /// <summary>
-    /// Check to see if the score meets the game win condition and take action afterwards.
+    /// Check several variables to see if the game must end.
     /// </summary>
-    /// <param name="currentScore"></param>
-    private void CheckForGameWin()
+    private void CheckForGameEnd()
     {
-        if (Score >= PointsToWin)
+        // If the player has:
+        //      1. Met the score to win the level
+        //      2. No moves left
+        //      3. One or less soft piece left on the board
+        // Then the game is over
+
+        if (Score >= PointsToWin || _hardenedPieces >= (Mathf.Pow(BOARD_SIZE,2)-1))
         {
-            PlayerPrefs.SetInt(PrefStrings.LAST_SCORE, Score);
-            SceneManager.LoadScene(1);
+            EndGame();
         }
+    }
+
+    /// <summary>
+    /// Transition the player to the game over screen.
+    /// </summary>
+    private void EndGame()
+    {
+        PlayerPrefs.SetInt(PrefStrings.LAST_SCORE, Score);
+        SceneManager.LoadScene(SceneIndexes.END_SCREEN);
     }
     #endregion
 
