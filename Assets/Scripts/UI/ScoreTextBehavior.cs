@@ -13,6 +13,10 @@ public class ScoreTextBehavior : MonoBehaviour
 
     #region Members
     private Text _text;
+
+    private int _currentScore = 0; // Used to animate the scoreboard
+    private int _targetScore = 0; // Used to animate the scoreboard
+    private int _tickSpeed = 10; // Number of points to increment per frame
     #endregion
 
     #region Unity Methods
@@ -23,14 +27,33 @@ public class ScoreTextBehavior : MonoBehaviour
         {
             throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(board)));
         }
-        board.OnScoreChange += UpdateUI;
+
+        board.OnScoreChange +=
+            (int score) =>
+            {
+                _targetScore = score;
+                StopAllCoroutines();
+                StartCoroutine(TickScore());
+            };
     }
     #endregion
 
     #region Methods
-    public void UpdateUI(int score)
+    public void UpdateUI()
     {
-        _text.text = string.Format("SCORE: {0:n0}", score);
+        _text.text = string.Format("SCORE: {0:n0}", _currentScore);
+    }
+
+    private IEnumerator TickScore()
+    {
+        while (_currentScore <= _targetScore)
+        {
+            UpdateUI();
+            _currentScore += _tickSpeed;
+            yield return new WaitForEndOfFrame();
+        }
+        _currentScore = _targetScore;
+        yield return null;
     }
     #endregion
 }

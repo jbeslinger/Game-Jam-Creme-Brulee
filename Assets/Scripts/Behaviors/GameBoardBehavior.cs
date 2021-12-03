@@ -348,7 +348,7 @@ public class GameBoardBehavior : MonoBehaviour
     }
 
     /// <summary>
-    /// Generate a new board and guarantee there will be at most 2 pieces of same color touching.
+    /// Generates a new board and guarantees there will be at most 2 pieces of same color touching.
     /// </summary>
     private void GenerateNewBoard(int pointsToWin, int numberOfFrozenPieces)
     {
