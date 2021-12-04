@@ -102,6 +102,9 @@ public class GameBoardBehavior : MonoBehaviour
 
     public delegate void OnMovesLeftChangeDelegate(int movesLeft);
     public OnMovesLeftChangeDelegate OnMovesLeftChange;
+
+    public delegate void OnPointsAwardedDelegate(int pointsAwarded);
+    public OnPointsAwardedDelegate OnPointsAwarded;
     #endregion
 
     #region Fields
@@ -301,7 +304,9 @@ public class GameBoardBehavior : MonoBehaviour
     private void AwardPoints(int numberOfPieces, int combo)
     {
         numberOfPieces -= 2;
-        Score += (int) (Mathf.Pow(BASE_SCORE, numberOfPieces) * 100 * combo);
+        int pointsToAward = (int) (Mathf.Pow(BASE_SCORE, numberOfPieces) * 100 * combo);
+        OnPointsAwarded(pointsToAward);
+        Score += pointsToAward;
         if (OnScoreChange != null)
         {
             OnScoreChange(Score);
