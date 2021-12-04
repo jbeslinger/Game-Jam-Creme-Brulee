@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 
 public class GameBoardBehavior : MonoBehaviour
 {
@@ -139,19 +138,18 @@ public class GameBoardBehavior : MonoBehaviour
         }
         else
         {
+#if UNITY_EDITOR
             GenerateNewBoard(100000, 0);
+#else
+            int winScore = (int) SceneManager.SceneArgs["win_score"];
+            int hardPieces = (int) SceneManager.SceneArgs["hard_pieces"];
+            GenerateNewBoard(winScore, hardPieces);
+#endif
         }
     }
 
     private void Update()
     {
-#if UNITY_EDITOR
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            RandomlyHardenPieces(1, 1.0f);
-        }
-#endif
-
         switch (State)
         {
             case BoardState.READY:
@@ -187,9 +185,9 @@ public class GameBoardBehavior : MonoBehaviour
                 break;
         }
     }
-    #endregion
+#endregion
 
-    #region Methods
+#region Methods
     /// <summary>
     /// Returns the x and y index of the provided piece.
     /// </summary>
@@ -696,33 +694,34 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     private void EndGame()
     {
-        PlayerPrefs.SetInt(PrefStrings.LAST_SCORE, Score);
-        SceneManager.LoadScene(SceneIndexes.END_SCREEN);
+        Hashtable args = new Hashtable();
+        args.Add("score_last_game", Score);
+        SceneManager.LoadScene("GameEndScene", args);
     }
-    #endregion
+#endregion
 
 
-    #region Subclasses
+#region Subclasses
     private class BoardTurn
     {
-        #region Members
+#region Members
         /// <summary>
         /// Each layer contains a reference to a piece, the direction it was pushed,
         /// and its original location.
         /// </summary>
         private readonly Stack<GameMove> _moves;
         private readonly GameBoardBehavior _board;
-        #endregion
+#endregion
 
-        #region Constructors
+#region Constructors
         public BoardTurn(Stack<GameMove> moves, in GameBoardBehavior board)
         {
             _moves = moves;
             _board = board;
         }
-        #endregion
+#endregion
 
-        #region Methods
+#region Methods
         /// <summary>
         /// Calls MoveTo() on each piece in _moves, then invokes the callback method when the pieces are done moving.
         /// </summary>
@@ -784,7 +783,7 @@ public class GameBoardBehavior : MonoBehaviour
             callback?.Invoke();
             yield return null;
         }
-        #endregion
+#endregion
     }
 
     /// <summary>
@@ -792,28 +791,28 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     private class MatchResult
     {
-        #region Properties
+#region Properties
         public bool Valid { get => Matches.Count > 0; }
         public List<List<GameObject>> Matches { get => _matches; }
-        #endregion
+#endregion
 
-        #region Members
+#region Members
         private List<List<GameObject>> _matches;
-        #endregion
+#endregion
 
-        #region Constructors
+#region Constructors
         public MatchResult()
         {
             _matches = new List<List<GameObject>>();
         }
-        #endregion
+#endregion
 
-        #region Methods
+#region Methods
         public void AddMatch(List<GameObject> pieces)
         {
             _matches.Add(pieces);
         }
-        #endregion
+#endregion
     }
 
     /// <summary>
@@ -822,18 +821,18 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     private class BoardMap
     {
-        #region Members
+#region Members
         int[,] _map;
-        #endregion
+#endregion
 
-        #region Constructors
+#region Constructors
         public BoardMap()
         {
             _map = new int[BOARD_SIZE, BOARD_SIZE];
         }
-        #endregion
+#endregion
 
-        #region Methods
+#region Methods
         public void Mark((int,int) location)
         {
             _map[location.Item1, location.Item2] = 1;
@@ -843,7 +842,7 @@ public class GameBoardBehavior : MonoBehaviour
         {
             return _map[location.Item1, location.Item2] == 0;
         }
-        #endregion
+#endregion
     }
-    #endregion
+#endregion
 }

@@ -723,6 +723,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   board: {fileID: 967508300}
+  scoreFx: {fileID: 747578286}
 --- !u!1 &1216896106
 GameObject:
   m_ObjectHideFlags: 0

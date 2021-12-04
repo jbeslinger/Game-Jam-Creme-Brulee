@@ -18,7 +18,7 @@ public class HiScoreManagerBehavior : MonoBehaviour
             throw new UnassignedReferenceException("Please assign the three Text UI components for the top three players.");
         }
 
-        int lastScore = PlayerPrefs.GetInt(PrefStrings.LAST_SCORE);
+        int lastScore = (int) SceneManager.SceneArgs["score_last_game"];
 
         string firstName = PlayerPrefs.GetString(PrefStrings.FIRST_PLAYER);
         int firstScore = PlayerPrefs.GetInt(PrefStrings.FIRST_PLAYER_SCORE);

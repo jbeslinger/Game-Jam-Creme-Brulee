@@ -9,6 +9,4 @@ public static class PrefStrings
 
     public const string THIRD_PLAYER        = "third_player_name";
     public const string THIRD_PLAYER_SCORE  = "third_best_score";
-
-    public const string LAST_SCORE          = "score_last_game";
 }

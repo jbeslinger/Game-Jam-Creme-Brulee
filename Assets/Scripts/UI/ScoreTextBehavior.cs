@@ -9,6 +9,7 @@ public class ScoreTextBehavior : MonoBehaviour
 {
     #region Fields
     public GameBoardBehavior board;
+    public ScoreFXTextBehavior scoreFx;
     #endregion
 
     #region Members
@@ -27,11 +28,20 @@ public class ScoreTextBehavior : MonoBehaviour
         {
             throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(board)));
         }
+        if (scoreFx == null)
+        {
+            throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(scoreFx)));
+        }
 
         board.OnScoreChange +=
             (int score) =>
             {
                 _targetScore = score;
+            };
+
+        scoreFx.OnPointsAwarded +=
+            (int score) =>
+            {
                 StopAllCoroutines();
                 StartCoroutine(TickScore());
             };
