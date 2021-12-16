@@ -10,10 +10,6 @@ public class StartButtonBehavior : MonoBehaviour
     /// </summary>
     public void onClick()
     {
-        Hashtable newGameArgs = new Hashtable();
-        newGameArgs.Add("win_score", 25000);
-        newGameArgs.Add("hard_pieces", 0);
-        
-        SceneManager.LoadScene("GameScene", newGameArgs);
+        SceneManager.LoadScene("GameScene", GameManager.NewLevel(1, 0));
     }
 }

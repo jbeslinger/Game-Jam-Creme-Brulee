@@ -33,7 +33,7 @@ public class GameBoardBehavior : MonoBehaviour
             switch (_state)
             {
                 case BoardState.READY:
-                    if (_turnOver)
+                    if (_turnIsOver)
                     {
                         MovesLeft = MAX_MOVES_LEFT;
                         EndOfTurn();
@@ -83,7 +83,7 @@ public class GameBoardBehavior : MonoBehaviour
             {
                 OnMovesLeftChange(value);
             }
-            if (value < 0)
+            if (value <= 0)
             {
                 EndGame();
             }
@@ -96,6 +96,9 @@ public class GameBoardBehavior : MonoBehaviour
     public delegate void OnScoreChangeDelegate(int newScore);
     public event OnScoreChangeDelegate OnScoreChange;
 
+    public delegate void OnWinConditionMetDelegate();
+    public OnWinConditionMetDelegate OnWinConditionMet;
+
     public delegate void OnWinConditionChangeDelegate(int pointsToWin);
     public OnWinConditionChangeDelegate OnWinConditionChange;
 
@@ -104,6 +107,9 @@ public class GameBoardBehavior : MonoBehaviour
 
     public delegate void OnPointsAwardedDelegate(int pointsAwarded);
     public OnPointsAwardedDelegate OnPointsAwarded;
+
+    public delegate void OnGameOverDelegate();
+    public OnGameOverDelegate OnGameOver;
     #endregion
 
     #region Fields
@@ -112,7 +118,8 @@ public class GameBoardBehavior : MonoBehaviour
 
     #region Members
     private int _pointsToWin;
-    private int _score = 0;
+    private int _currentLevel;
+    private int _score;
     private int _movesLeft;
     private int _hardenedPieces = 0;
 
@@ -122,7 +129,7 @@ public class GameBoardBehavior : MonoBehaviour
     private List<GameObject> _previewObjects = new List<GameObject>();
     private Stack<BoardTurn> _turns = new Stack<BoardTurn>();
 
-    private bool _turnOver = false;
+    private bool _turnIsOver = false;
     #endregion
 
     #region Unity Methods
@@ -138,18 +145,26 @@ public class GameBoardBehavior : MonoBehaviour
         }
         else
         {
-#if UNITY_EDITOR
-            GenerateNewBoard(100000, 0);
-#else
-            int winScore = (int) SceneManager.SceneArgs["win_score"];
+            _currentLevel = (int) SceneManager.SceneArgs["level"];
+            PointsToWin = (int) SceneManager.SceneArgs["win_score"];
             int hardPieces = (int) SceneManager.SceneArgs["hard_pieces"];
-            GenerateNewBoard(winScore, hardPieces);
-#endif
+            GenerateNewBoard(hardPieces);
+            Score = (int)SceneManager.SceneArgs["score_last_game"];
         }
     }
 
     private void Update()
     {
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            WinLevel();
+        }
+        else if (Input.GetKeyDown(KeyCode.L))
+        {
+            EndGame();
+        }
+#endif
         switch (State)
         {
             case BoardState.READY:
@@ -280,7 +295,7 @@ public class GameBoardBehavior : MonoBehaviour
         BoardTurn nextTurn = new BoardTurn(_pathToEmptySpot, this);
         StartCoroutine(nextTurn.Execute(() => { State = BoardState.CHECKING; }));
         _turns.Push(nextTurn);
-        _turnOver = true;
+        _turnIsOver = true;
     }
 
     /// <summary>
@@ -289,9 +304,27 @@ public class GameBoardBehavior : MonoBehaviour
     public void UndoLastTurn()
     {
         // TODO: Make sure the player loses points by undoing if necessary.
-        _turnOver = false;
+        _turnIsOver = false;
         State = BoardState.PAUSED;
         StartCoroutine(_turns.Pop().UndoExecution(() => { State = BoardState.READY; MovesLeft -= 1; }));
+    }
+
+    /// <summary>
+    /// Called by animation handlers to transition to the next scene of the game when the scene transition animation is over.
+    /// </summary>
+    /// <param name="gameIsOver"></param>
+    public void LoadNextLevel(bool gameIsOver)
+    {
+        if (gameIsOver)
+        {
+            Hashtable args = new Hashtable();
+            args.Add("score_last_game", Score);
+            SceneManager.LoadScene("GameEndScene", args);
+        }
+        else
+        {
+            SceneManager.LoadScene("GameScene", GameManager.NewLevel(_currentLevel + 1, Score));
+        }
     }
 
     /// <summary>
@@ -353,9 +386,8 @@ public class GameBoardBehavior : MonoBehaviour
     /// <summary>
     /// Generates a new board and guarantees there will be at most 2 pieces of same color touching.
     /// </summary>
-    private void GenerateNewBoard(int pointsToWin, int numberOfFrozenPieces)
+    private void GenerateNewBoard(int numberOfFrozenPieces)
     {
-        PointsToWin = pointsToWin;
         ClearBoard();
         Vector2 offset = this.transform.position;
         for (int col = 0; col < BOARD_SIZE; col++)
@@ -656,19 +688,8 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     private void EndOfTurn()
     {
-        // On the fifth turn, harden a piece no matter what to teach the player
-        if (_turns.Count == 5)
-        {
-            RandomlyHardenPieces(1, 1.0f);
-        }
-        // From there on, follow a quadratic formula for chance and increase the number of pieces to
-        // potentially harden by 1 every 5 turns
-        else if (_turns.Count > 5)
-        {
-            float chance = Mathf.Pow(_turns.Count, 2) / 8192;
-            RandomlyHardenPieces(_turns.Count / 10, chance);
-        }
-
+        float chance = Mathf.Pow(_turns.Count, 2) / 8192;
+        RandomlyHardenPieces(_turns.Count / 10, chance);
         CheckForGameEnd();
     }
 
@@ -678,15 +699,26 @@ public class GameBoardBehavior : MonoBehaviour
     private void CheckForGameEnd()
     {
         // If the player has:
-        //      1. Met the score to win the level
         //      2. No moves left
         //      3. One or less soft piece left on the board
         // Then the game is over
 
-        if (Score >= PointsToWin || _hardenedPieces >= (Mathf.Pow(BOARD_SIZE,2)-1))
+        if (Score >= PointsToWin)
+        {
+            WinLevel();
+        }
+        else if (_hardenedPieces >= (Mathf.Pow(BOARD_SIZE, 2) - 1))
         {
             EndGame();
         }
+    }
+
+    /// <summary>
+    /// Transitions the player to the next level.
+    /// </summary>
+    private void WinLevel()
+    {
+        OnWinConditionMet?.Invoke();
     }
 
     /// <summary>
@@ -694,9 +726,7 @@ public class GameBoardBehavior : MonoBehaviour
     /// </summary>
     private void EndGame()
     {
-        Hashtable args = new Hashtable();
-        args.Add("score_last_game", Score);
-        SceneManager.LoadScene("GameEndScene", args);
+        OnGameOver?.Invoke();
     }
 #endregion
 
@@ -739,7 +769,8 @@ public class GameBoardBehavior : MonoBehaviour
                 pieces.Add(pb);
             }
 
-            yield return new WaitUntil(() => {
+            yield return new WaitUntil(() =>
+            {
                 foreach (PieceBehavior pb in pieces)
                 {
                     if (pb.animating)
@@ -769,7 +800,8 @@ public class GameBoardBehavior : MonoBehaviour
                 pieces.Add(pb);
             }
 
-            yield return new WaitUntil(() => {
+            yield return new WaitUntil(() =>
+            {
                 foreach (PieceBehavior pb in pieces)
                 {
                     if (pb.animating)

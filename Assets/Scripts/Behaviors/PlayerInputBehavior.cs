@@ -17,6 +17,8 @@ public class PlayerInputBehavior : MonoBehaviour
 
     private PushDirection _directionToPush;
     private bool _hasRequestedPreview = false;
+
+    private bool _blockInput = false;
     #endregion
 
     #region Unity Methods
@@ -33,12 +35,13 @@ public class PlayerInputBehavior : MonoBehaviour
         else
         {
             _gb = playerBoard.GetComponent<GameBoardBehavior>();
+            _gb.OnWinConditionMet += () => { _blockInput = true; };
         }
     }
 
     private void Update()
     {
-        if (_gb.IsBusy)
+        if (_gb.IsBusy || _blockInput)
         {
             return;
         }

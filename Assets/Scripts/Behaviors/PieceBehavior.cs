@@ -186,7 +186,7 @@ public class PieceBehavior : MonoBehaviour
     /// Animate the piece to slide into a targetPosition.
     /// </summary>
     /// <param name="targetPos"></param>
-    private void MoveTo(Vector2 targetPos)
+    public void MoveTo(Vector2 targetPos)
     {
         if (State != PieceState.MOVING)
         {

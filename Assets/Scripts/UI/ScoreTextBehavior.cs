@@ -33,6 +33,8 @@ public class ScoreTextBehavior : MonoBehaviour
             throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(scoreFx)));
         }
 
+        _currentScore = board.Score;
+
         board.OnScoreChange +=
             (int score) =>
             {
