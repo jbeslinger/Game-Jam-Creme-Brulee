@@ -33,7 +33,8 @@ public class ScoreTextBehavior : MonoBehaviour
             throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(scoreFx)));
         }
 
-        _currentScore = board.Score;
+        _currentScore = (int)SceneManager.SceneArgs["score_last_game"];
+        UpdateUI();
 
         board.OnScoreChange +=
             (int score) =>

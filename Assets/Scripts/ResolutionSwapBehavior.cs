@@ -7,6 +7,7 @@ public class ResolutionSwapBehavior : MonoBehaviour
 
     #region Constants
     private const int RENDER_WIDTH = 270, RENDER_HEIGHT = 480;
+    private const float TARGET_ASPECT = (float)RENDER_WIDTH / (float)RENDER_HEIGHT;
     private const int REF_PPU = 24;
     #endregion
 
@@ -44,21 +45,25 @@ public class ResolutionSwapBehavior : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             _scale = 1;
+            _fullscreen = false;
             _resolutionChangeRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
             _scale = 2;
+            _fullscreen = false;
             _resolutionChangeRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha3))
         {
             _scale = 3;
+            _fullscreen = false;
             _resolutionChangeRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha4))
         {
             _scale = 4;
+            _fullscreen = false;
             _resolutionChangeRequested = true;
         }
         else if (Input.GetKeyDown(KeyCode.F))
@@ -79,7 +84,15 @@ public class ResolutionSwapBehavior : MonoBehaviour
     #region Methods
     private void UpdateResolution()
     {
-        Screen.SetResolution(RENDER_WIDTH * _scale, RENDER_HEIGHT * _scale, _fullscreen);
+        if (_fullscreen)
+        {
+            Screen.SetResolution((int)(Screen.currentResolution.height * TARGET_ASPECT), Screen.currentResolution.height, true);
+        }
+        else
+        {
+            Screen.SetResolution(RENDER_WIDTH * _scale, RENDER_HEIGHT * _scale, false);
+        }
+        
     }
 
     private void SavePrefs()
