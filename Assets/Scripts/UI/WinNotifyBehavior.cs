@@ -22,11 +22,11 @@ public class WinNotifyBehavior : MonoBehaviour
     {
         if (winLoseLabel == null)
         {
-            throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(winLoseLabel)));
+            throw new UnassignedReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(winLoseLabel)));
         }
         if (board == null)
         {
-            throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(board)));
+            throw new UnassignedReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(board)));
         }
 
         _animator = GetComponent<Animator>();

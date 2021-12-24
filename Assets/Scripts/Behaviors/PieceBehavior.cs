@@ -16,6 +16,22 @@ public class PieceBehavior : MonoBehaviour
     #region Consts
     private const float MOVE_SPEED = 8f; // In units per second
     private const float PREVIEW_MOVE_SPEED = MOVE_SPEED / 2f; // In units per second
+
+    public readonly Dictionary<PieceType, Color> colorDict = new Dictionary<PieceType, Color>()
+    {
+        { PieceType.RED, new Color32(0xFF, 0x00, 0x00, 0xFF) }, 
+        { PieceType.ORA, new Color32(0xFF, 0x80, 0x00, 0xFF) }, 
+        { PieceType.YEL, new Color32(0xFF, 0xFF, 0x00, 0xFF) }, 
+        { PieceType.GRE, new Color32(0x00, 0xFF, 0x00, 0xFF) }, 
+        { PieceType.BLU, new Color32(0x00, 0x00, 0xFF, 0xFF) }, 
+        { PieceType.PUR, new Color32(0x80, 0x00, 0x80, 0xFF) }, 
+        { PieceType.WHI, new Color32(0xFF, 0xFF, 0xFF, 0xFF) }  
+    };
+    #endregion
+
+    #region Events
+    public delegate void OnBreakDelegate();
+    public OnBreakDelegate OnBreak;
     #endregion
 
     #region Properties
@@ -58,30 +74,7 @@ public class PieceBehavior : MonoBehaviour
         {
             _pieceType = value;
             gameObject.name = ToString();
-            switch (value)
-            {
-                case PieceType.WHI:
-                    _sprite.color = Color.white;
-                    break;
-                case PieceType.RED:
-                    _sprite.color = Color.red;
-                    break;
-                case PieceType.ORA:
-                    _sprite.color = new Color(1.0f, 0.5f, 0.0f);
-                    break;
-                case PieceType.YEL:
-                    _sprite.color = Color.yellow;
-                    break;
-                case PieceType.GRE:
-                    _sprite.color = Color.green;
-                    break;
-                case PieceType.BLU:
-                    _sprite.color = Color.blue;
-                    break;
-                case PieceType.PUR:
-                    _sprite.color = Color.blue + Color.red;
-                    break;
-            }
+            _sprite.color = colorDict[value];
         }
     }
     public bool Hardened { get => _hardened; set
@@ -285,6 +278,7 @@ public class PieceBehavior : MonoBehaviour
         State = PieceState.POPPED;
         animating = true;
         _anim.SetTrigger("Popped");
+        OnBreak?.Invoke();
     }
 
     public void Revive()
