@@ -22,7 +22,9 @@ public class PieceParticleEmitterBehavior : MonoBehaviour
             throw new UnassignedReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(parentPiece)));
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         _particleSystem.startColor = parentPiece.colorDict[parentPiece.Type];
+#pragma warning restore CS0618 // Type or member is obsolete
 
         parentPiece.OnBreak += () => { _particleSystem.Emit(10); };
     }

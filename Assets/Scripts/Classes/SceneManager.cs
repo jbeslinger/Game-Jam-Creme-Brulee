@@ -8,6 +8,11 @@ public static class SceneManager
     public static Hashtable SceneArgs { get => _sceneArgs; }
     #endregion
 
+    #region Fields
+    public delegate void OnSceneLoadDelegate();
+    public static OnSceneLoadDelegate OnSceneLoad;
+    #endregion
+
     #region Members
     private static Hashtable _sceneArgs;
     #endregion
@@ -16,6 +21,7 @@ public static class SceneManager
     public static void LoadScene(string sceneName, Hashtable args)
     {
         _sceneArgs = args;
+        OnSceneLoad?.Invoke();
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
     }
     #endregion

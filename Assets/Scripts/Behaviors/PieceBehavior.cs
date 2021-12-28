@@ -131,6 +131,7 @@ public class PieceBehavior : MonoBehaviour
             throw new MissingComponentException("The GameObject you provided as the Arrow Indicator has no Sprite.");
         }
         _arrowIndicator.GetComponent<SpriteRenderer>().enabled = false;
+        SoundManagerBehavior.RegisterGamePiece(this);
     }
 
     private void Update()
