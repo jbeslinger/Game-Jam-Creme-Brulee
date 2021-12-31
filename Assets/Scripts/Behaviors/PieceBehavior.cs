@@ -274,8 +274,9 @@ public class PieceBehavior : MonoBehaviour
         _arrowIndicator.transform.rotation = Quaternion.Euler(0.0f, 0.0f, degrees);
     }
 
-    public void Break()
+    public IEnumerator Break(float delayForSeconds)
     {
+        yield return new WaitForSeconds(delayForSeconds);
         State = PieceState.POPPED;
         animating = true;
         _anim.SetTrigger("Popped");

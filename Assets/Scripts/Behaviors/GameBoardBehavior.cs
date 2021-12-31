@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using Random = UnityEngine.Random;
 
 public class GameBoardBehavior : MonoBehaviour
 {
@@ -363,7 +364,7 @@ public class GameBoardBehavior : MonoBehaviour
                 SetPiece(idx, null);
                 PieceBehavior pb = piece.GetComponent<PieceBehavior>();
                 piecesBeingDestroyed.Add(pb);
-                pb.Break();
+                StartCoroutine(pb.Break(Random.Range(0.0f, 0.2f)));
             }
             combo += 1;
         }
