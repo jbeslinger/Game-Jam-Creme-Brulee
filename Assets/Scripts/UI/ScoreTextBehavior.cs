@@ -37,13 +37,13 @@ public class ScoreTextBehavior : MonoBehaviour
         UpdateUI();
 
         board.OnScoreChange +=
-            (int score) =>
+            () =>
             {
-                _targetScore = score;
+                _targetScore = board.Score;
             };
 
         scoreFx.OnPointsAwarded +=
-            (int score) =>
+            (int points) =>
             {
                 StopAllCoroutines();
                 StartCoroutine(TickScore());

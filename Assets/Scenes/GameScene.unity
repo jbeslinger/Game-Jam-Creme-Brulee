@@ -1668,6 +1668,14 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1559005906}
     m_Modifications:
+    - target: {fileID: 5287613345492703834, guid: 5b6a370df329b9a4bbdf8c97beb9ca5c, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5340056316362672991, guid: 5b6a370df329b9a4bbdf8c97beb9ca5c, type: 3}
+      propertyPath: m_Name
+      value: soda bg
+      objectReference: {fileID: 0}
     - target: {fileID: 6096559627895374587, guid: 5b6a370df329b9a4bbdf8c97beb9ca5c, type: 3}
       propertyPath: m_Name
       value: bottle

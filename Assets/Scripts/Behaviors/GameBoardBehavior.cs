@@ -52,11 +52,11 @@ public class GameBoardBehavior : MonoBehaviour
         get => _score;
         set
         {
-            if (OnScoreChange != null)
+            if (_score != value)
             {
-                OnScoreChange(value);
+                OnScoreChange?.Invoke();
+                _score = value;
             }
-            _score = value;
         }
     }
     public int PointsToWin
@@ -94,7 +94,7 @@ public class GameBoardBehavior : MonoBehaviour
     #endregion
 
     #region Events
-    public delegate void OnScoreChangeDelegate(int newScore);
+    public delegate void OnScoreChangeDelegate();
     public event OnScoreChangeDelegate OnScoreChange;
 
     public delegate void OnWinConditionMetDelegate();
@@ -341,7 +341,7 @@ public class GameBoardBehavior : MonoBehaviour
         Score += pointsToAward;
         if (OnScoreChange != null)
         {
-            OnScoreChange(Score);
+            OnScoreChange();
         }
     }
 
