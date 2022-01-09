@@ -71,7 +71,7 @@ public class ProgressBarBehavior : MonoBehaviour
         OnProgressBarRaise +=
         () =>
         {
-            Vector2 newPos = Vector2.Lerp(new Vector2(transform.localPosition.x, START_Y_POS), new Vector2(transform.localPosition.x, END_Y_POS), Ease.EaseOut(CurrentProgress));
+            Vector2 newPos = Vector2.Lerp(new Vector2(transform.localPosition.x, START_Y_POS), new Vector2(transform.localPosition.x, END_Y_POS), CurrentProgress);
             transform.localPosition = newPos;
         };
     }
@@ -104,17 +104,6 @@ public class ProgressBarBehavior : MonoBehaviour
     private float Round(float toRound, uint precision)
     {
         return Mathf.Round(toRound * 100f) * (1 * Mathf.Pow(10, -precision));
-    }
-
-    private IEnumerator AnimateColor()
-    {
-
-        while (true)
-        {
-            yield return null;
-        }
-
-        yield return null;
     }
     #endregion
 }

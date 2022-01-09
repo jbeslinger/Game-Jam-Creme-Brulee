@@ -363,6 +363,12 @@ public class GameBoardBehavior : MonoBehaviour
                 (int, int) idx = IndexOf(piece);
                 SetPiece(idx, null);
                 PieceBehavior pb = piece.GetComponent<PieceBehavior>();
+                
+                if (pb.Hardened)
+                {
+                    _hardenedPieces -= 1;
+                }
+                
                 piecesBeingDestroyed.Add(pb);
                 StartCoroutine(pb.Break(Random.Range(0.0f, 0.2f)));
             }
