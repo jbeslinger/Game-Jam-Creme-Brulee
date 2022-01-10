@@ -165,6 +165,10 @@ public class GameBoardBehavior : MonoBehaviour
         {
             EndGame();
         }
+        else if (Input.GetKeyDown(KeyCode.H))
+        {
+            RandomlyHardenPieces(1, 1.0f);
+        }
 #endif
         switch (State)
         {

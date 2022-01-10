@@ -4820,6 +4820,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parentPiece: {fileID: 3577541578146460020}
+  softSprite: {fileID: 2100000, guid: 476b7fab763efb745983f689ca5a65b4, type: 2}
+  hardSprite: {fileID: 2100000, guid: 936497e3bfbbc994589417fe7a95b684, type: 2}
 --- !u!1 &1774286696064403003
 GameObject:
   m_ObjectHideFlags: 0

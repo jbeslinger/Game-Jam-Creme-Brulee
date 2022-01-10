@@ -173,9 +173,9 @@ public class PieceBehavior : MonoBehaviour
             _anim.SetBool("Hardened", true);
         }
     }
-    #endregion
+#endregion
 
-    #region Methods
+#region Methods
     /// <summary>
     /// Animate the piece to slide into a targetPosition.
     /// </summary>
@@ -311,5 +311,5 @@ public class PieceBehavior : MonoBehaviour
         SpriteRenderer srArrow = _arrowIndicator.GetComponent<SpriteRenderer>();
         srArrow.enabled = !srArrow.enabled;
     }
-    #endregion
+#endregion
 }
