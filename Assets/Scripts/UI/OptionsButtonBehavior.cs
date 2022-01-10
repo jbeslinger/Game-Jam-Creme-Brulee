@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OptionsMenuBehavior : MonoBehaviour
+public class OptionsButtonBehavior : MonoBehaviour
 {
     #region Fields
     public Animator canvasAnimator;

@@ -28,8 +28,6 @@ public class SaveButtonBehavior : MonoBehaviour
     #region Methods
     public void SaveAndCloseOptionsMenu()
     {
-        // SAVE THE OPTIONS
-
         canvasAnimator.SetTrigger("Shift Menu");
     }
 

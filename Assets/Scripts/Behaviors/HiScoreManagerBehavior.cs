@@ -20,22 +20,22 @@ public class HiScoreManagerBehavior : MonoBehaviour
 
         int lastScore = (int) SceneManager.SceneArgs["score_last_game"];
 
-        string firstName = PlayerPrefs.GetString(PrefStrings.FIRST_PLAYER);
-        int firstScore = PlayerPrefs.GetInt(PrefStrings.FIRST_PLAYER_SCORE);
+        string firstName = PlayerPrefs.GetString(nameof(firstName));
+        int firstScore = PlayerPrefs.GetInt(nameof(firstScore));
         if (firstName != "")
         {
             first.text = string.Format("1. {0} - {1:n0}", firstName, firstScore);
         }
 
-        string secondName = PlayerPrefs.GetString(PrefStrings.SECOND_PLAYER);
-        int secondScore = PlayerPrefs.GetInt(PrefStrings.SECOND_PLAYER_SCORE);
+        string secondName = PlayerPrefs.GetString(nameof(secondName));
+        int secondScore = PlayerPrefs.GetInt(nameof(secondScore));
         if (secondName != "")
         {
             second.text = string.Format("1. {0} - {1:n0}", secondName, secondScore);
         }
 
-        string thirdName = PlayerPrefs.GetString(PrefStrings.THIRD_PLAYER);
-        int thirdScore = PlayerPrefs.GetInt(PrefStrings.THIRD_PLAYER_SCORE);
+        string thirdName = PlayerPrefs.GetString(nameof(thirdName));
+        int thirdScore = PlayerPrefs.GetInt(nameof(thirdScore));
         if (thirdName != "")
         {
             third.text = string.Format("1. {0} - {1:n0}", thirdName, thirdScore);
