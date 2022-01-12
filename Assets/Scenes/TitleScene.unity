@@ -902,6 +902,7 @@ GameObject:
   - component: {fileID: 303243713}
   - component: {fileID: 303243715}
   - component: {fileID: 303243714}
+  - component: {fileID: 303243716}
   m_Layer: 5
   m_Name: options panel
   m_TagString: Untagged
@@ -970,6 +971,32 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 303243712}
   m_CullTransparentMesh: 1
+--- !u!114 &303243716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 303243712}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c4c4ca0a358bcc44a2f69cc0252e774, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  windowedScaleDropdown: {fileID: 1773487285}
+  fullscreenToggle: {fileID: 1129163496}
+  musicVolSlider: {fileID: 2048679835}
+  levelWinVolSlider: {fileID: 1516755751}
+  bubblePopVolSlider: {fileID: 175372652}
+  themeSlider: {fileID: 622819389}
+  bubbleThemePreviewImages:
+  - {fileID: 2126736302}
+  - {fileID: 1081137257}
+  - {fileID: 1052990284}
+  - {fileID: 1273592245}
+  - {fileID: 18750055}
+  - {fileID: 781890601}
+  - {fileID: 433995981}
 --- !u!1 &314033179
 GameObject:
   m_ObjectHideFlags: 0
@@ -2751,7 +2778,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 0
+  m_Interactable: 1
   m_TargetGraphic: {fileID: 917466369}
   m_OnClick:
     m_PersistentCalls:
@@ -4092,7 +4119,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1994571444}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.041533545
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -5328,6 +5355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be06c7acbd2fbcd42a569550520cd232, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  optionsMenu: {fileID: 303243716}
   canvasAnimator: {fileID: 1356324590}
 --- !u!114 &1760148168
 MonoBehaviour:
@@ -5577,9 +5605,9 @@ MonoBehaviour:
       m_Image: {fileID: 0}
     - m_Text: 2x
       m_Image: {fileID: 0}
-    - m_Text: 4x
+    - m_Text: 3x
       m_Image: {fileID: 0}
-    - m_Text: 8x
+    - m_Text: 4x
       m_Image: {fileID: 0}
   m_OnValueChanged:
     m_PersistentCalls:
@@ -6011,7 +6039,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000010627699}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1921410734
@@ -6671,7 +6699,7 @@ MonoBehaviour:
   m_Content: {fileID: 1900253713}
   m_Horizontal: 1
   m_Vertical: 1
-  m_MovementType: 1
+  m_MovementType: 2
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
@@ -6734,6 +6762,10 @@ PrefabInstance:
     - target: {fileID: 390949336753719048, guid: 6172f8a52bfdbae4290c515d3a03904d, type: 3}
       propertyPath: m_Name
       value: sound manager
+      objectReference: {fileID: 0}
+    - target: {fileID: 390949336753719049, guid: 6172f8a52bfdbae4290c515d3a03904d, type: 3}
+      propertyPath: m_Volume
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 390949336753719050, guid: 6172f8a52bfdbae4290c515d3a03904d, type: 3}
       propertyPath: m_RootOrder
