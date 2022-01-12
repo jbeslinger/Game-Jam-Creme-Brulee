@@ -17,16 +17,10 @@ public class PieceBehavior : MonoBehaviour
     private const float MOVE_SPEED = 8f; // In units per second
     private const float PREVIEW_MOVE_SPEED = MOVE_SPEED / 2f; // In units per second
 
-    public readonly Dictionary<PieceType, Color> colorDict = new Dictionary<PieceType, Color>()
-    {
-        { PieceType.RED, new Color32(0xFF, 0x00, 0x00, 0xFF) }, 
-        { PieceType.ORA, new Color32(0xFF, 0x80, 0x00, 0xFF) }, 
-        { PieceType.YEL, new Color32(0xFF, 0xFF, 0x00, 0xFF) }, 
-        { PieceType.GRE, new Color32(0x00, 0xFF, 0x00, 0xFF) }, 
-        { PieceType.BLU, new Color32(0x00, 0x00, 0xFF, 0xFF) }, 
-        { PieceType.PUR, new Color32(0x80, 0x00, 0x80, 0xFF) }, 
-        { PieceType.WHI, new Color32(0xFF, 0xFF, 0xFF, 0xFF) }  
-    };
+    /// <summary>
+    /// A array of piece color dictionaries; each element is a different theme.
+    /// </summary>
+    public readonly ColorThemeDictionary colorDict = new ColorThemeDictionary();
     #endregion
 
     #region Events
@@ -173,9 +167,9 @@ public class PieceBehavior : MonoBehaviour
             _anim.SetBool("Hardened", true);
         }
     }
-#endregion
+    #endregion
 
-#region Methods
+    #region Methods
     /// <summary>
     /// Animate the piece to slide into a targetPosition.
     /// </summary>
@@ -311,5 +305,74 @@ public class PieceBehavior : MonoBehaviour
         SpriteRenderer srArrow = _arrowIndicator.GetComponent<SpriteRenderer>();
         srArrow.enabled = !srArrow.enabled;
     }
-#endregion
+    #endregion
+
+    #region Classes
+    public class ColorThemeDictionary
+    {
+        #region Members
+        private readonly Dictionary<PieceType, Color>[] _colorThemes = new Dictionary<PieceType, Color>[]
+        {
+            new Dictionary<PieceType, Color>() {
+                { PieceType.RED, new Color32(0xFF, 0x00, 0x00, 0xFF) },
+                { PieceType.ORA, new Color32(0xFF, 0x80, 0x00, 0xFF) },
+                { PieceType.YEL, new Color32(0xFF, 0xFF, 0x00, 0xFF) },
+                { PieceType.GRE, new Color32(0x00, 0xFF, 0x00, 0xFF) },
+                { PieceType.BLU, new Color32(0x00, 0x00, 0xFF, 0xFF) },
+                { PieceType.PUR, new Color32(0x80, 0x00, 0x80, 0xFF) },
+                { PieceType.WHI, new Color32(0xFF, 0xFF, 0xFF, 0xFF) }
+            },
+            new Dictionary<PieceType, Color>() {
+                { PieceType.RED, new Color32(0xFF, 0x00, 0x00, 0xFF) },
+                { PieceType.ORA, new Color32(0xFF, 0x80, 0x00, 0xFF) },
+                { PieceType.YEL, new Color32(0xFF, 0xFF, 0x00, 0xFF) },
+                { PieceType.GRE, new Color32(0x00, 0xFF, 0x00, 0xFF) },
+                { PieceType.BLU, new Color32(0x00, 0x00, 0xFF, 0xFF) },
+                { PieceType.PUR, new Color32(0x80, 0x00, 0x80, 0xFF) },
+                { PieceType.WHI, new Color32(0xFF, 0xFF, 0xFF, 0xFF) }
+            },
+            new Dictionary<PieceType, Color>() {
+                { PieceType.RED, new Color32(0xFF, 0x00, 0x00, 0xFF) },
+                { PieceType.ORA, new Color32(0xFF, 0x80, 0x00, 0xFF) },
+                { PieceType.YEL, new Color32(0xFF, 0xFF, 0x00, 0xFF) },
+                { PieceType.GRE, new Color32(0x00, 0xFF, 0x00, 0xFF) },
+                { PieceType.BLU, new Color32(0x00, 0x00, 0xFF, 0xFF) },
+                { PieceType.PUR, new Color32(0x80, 0x00, 0x80, 0xFF) },
+                { PieceType.WHI, new Color32(0xFF, 0xFF, 0xFF, 0xFF) }
+            },
+            new Dictionary<PieceType, Color>() {
+                { PieceType.RED, new Color32(0xFF, 0x00, 0x00, 0xFF) },
+                { PieceType.ORA, new Color32(0xFF, 0x80, 0x00, 0xFF) },
+                { PieceType.YEL, new Color32(0xFF, 0xFF, 0x00, 0xFF) },
+                { PieceType.GRE, new Color32(0x00, 0xFF, 0x00, 0xFF) },
+                { PieceType.BLU, new Color32(0x00, 0x00, 0xFF, 0xFF) },
+                { PieceType.PUR, new Color32(0x80, 0x00, 0x80, 0xFF) },
+                { PieceType.WHI, new Color32(0xFF, 0xFF, 0xFF, 0xFF) }
+            },
+            new Dictionary<PieceType, Color>() {
+                { PieceType.RED, new Color32(0xFF, 0x00, 0x00, 0xFF) },
+                { PieceType.ORA, new Color32(0xFF, 0x80, 0x00, 0xFF) },
+                { PieceType.YEL, new Color32(0xFF, 0xFF, 0x00, 0xFF) },
+                { PieceType.GRE, new Color32(0x00, 0xFF, 0x00, 0xFF) },
+                { PieceType.BLU, new Color32(0x00, 0x00, 0xFF, 0xFF) },
+                { PieceType.PUR, new Color32(0x80, 0x00, 0x80, 0xFF) },
+                { PieceType.WHI, new Color32(0xFF, 0xFF, 0xFF, 0xFF) }
+            }
+        };
+        #endregion
+
+        #region Operator Overrides
+        /// <summary>
+        /// Square bracket operator override so you can access this class like a list.
+        /// Returns a Color32 from the hardcoded color dictionary based on the player's chosen theme.
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns></returns>
+        public Color32 this[PieceType p]
+        {
+            get { return _colorThemes[OptionsManagerBehavior.Theme][p]; }
+        }
+        #endregion
+    }
+    #endregion
 }
