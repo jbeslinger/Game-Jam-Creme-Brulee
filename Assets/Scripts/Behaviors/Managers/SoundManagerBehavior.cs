@@ -83,15 +83,31 @@ public class SoundManagerBehavior : MonoBehaviour
 
         OptionsManagerBehavior.instance.OnLevelWinVolChange += (float vol) =>
         {
+            if (!sfxSource.isPlaying)
+            {
+                PlayLoseSound();
+            }
             levelWinVolume = vol;
+            sfxSource.volume = vol;
         };
 
         OptionsManagerBehavior.instance.OnBubblePopVolChange += (float vol) =>
         {
+            if (!sfxSource.isPlaying)
+            {
+                PlayBreakSound();
+            }
             bubblePopVolume = vol;
+            sfxSource.volume = vol;
         };
+    }
 
-        musicSource.volume = OptionsManagerBehavior.MusicVol;
+    private void Start()
+    {
+        musicVolume = OptionsManagerBehavior.MusicVol;
+        musicSource.volume = musicVolume;
+        levelWinVolume = OptionsManagerBehavior.LevelWinVol;
+        bubblePopVolume = OptionsManagerBehavior.BubblePopVol;
     }
 
     private void Update()

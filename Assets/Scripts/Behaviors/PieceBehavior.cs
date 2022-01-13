@@ -311,6 +311,9 @@ public class PieceBehavior : MonoBehaviour
     public class ColorThemeDictionary
     {
         #region Members
+        /// <summary>
+        /// Hardcode in as many themes as you want.
+        /// </summary>
         private readonly Dictionary<PieceType, Color>[] _colorThemes = new Dictionary<PieceType, Color>[]
         {
             new Dictionary<PieceType, Color>() {
