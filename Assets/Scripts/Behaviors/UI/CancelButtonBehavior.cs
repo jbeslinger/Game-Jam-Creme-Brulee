@@ -23,7 +23,7 @@ public class CancelButtonBehavior : MonoBehaviour
     public void CloseOptionsMenu()
     {
         optionsMenu.ResetOptionsMenu();
-        canvasAnimator.SetTrigger("Shift Menu");
+        canvasAnimator.SetTrigger("Toggle Options Menu");
     }
     #endregion
 }

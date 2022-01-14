@@ -21,7 +21,7 @@ public class OptionsButtonBehavior : MonoBehaviour
     #region Methods
     public void OpenOptionsMenu()
     {
-        canvasAnimator.SetTrigger("Shift Menu");
+        canvasAnimator.SetTrigger("Toggle Options Menu");
     }
     #endregion
 }

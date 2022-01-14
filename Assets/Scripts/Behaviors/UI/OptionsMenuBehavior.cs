@@ -31,8 +31,18 @@ public class OptionsMenuBehavior : MonoBehaviour
         }
 
         AttachOnValueChangedEvents();
-        LoadValues();
+        ResetOptionsMenu();
     }
+
+#if UNITY_EDITOR
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            PlayerPrefs.DeleteAll();
+        }
+    }
+#endif
     #endregion
 
     #region Methods
@@ -43,6 +53,7 @@ public class OptionsMenuBehavior : MonoBehaviour
     {
         OptionsManagerBehavior.LoadOptions();
         LoadValues();
+        UpdateThemePreviewImages();
     }
     
     private void AttachOnValueChangedEvents()
@@ -88,8 +99,8 @@ public class OptionsMenuBehavior : MonoBehaviour
 
         themeSlider.onValueChanged.AddListener(delegate
         {
-            UpdateThemePreviewImages();
             OptionsManagerBehavior.Theme = (int)themeSlider.value;
+            UpdateThemePreviewImages();
         });
     }
 
@@ -125,7 +136,12 @@ public class OptionsMenuBehavior : MonoBehaviour
 
     private void UpdateThemePreviewImages()
     {
-        // TODO
+        int idx = 0;
+        foreach (Image bubbleImage in bubbleThemePreviewImages)
+        {
+            bubbleImage.color = PieceBehavior.colorDict[(PieceBehavior.PieceType)idx];
+            idx++;
+        }
     }
     #endregion
 }

@@ -32,7 +32,7 @@ public class PieceParticleEmitterBehavior : MonoBehaviour
         }
 
 #pragma warning disable CS0618 // Type or member is obsolete
-        _particleSystem.startColor = parentPiece.colorDict[parentPiece.Type];
+        _particleSystem.startColor = PieceBehavior.colorDict[parentPiece.Type];
 #pragma warning restore CS0618 // Type or member is obsolete
 
         parentPiece.OnBreak +=() =>
