@@ -8,7 +8,7 @@ public class StartButtonBehavior : MonoBehaviour
     /// <summary>
     /// Take the player to the game scene.
     /// </summary>
-    public void onClick()
+    public void StartNewGame()
     {
         SceneManager.LoadScene("GameScene", GameManager.NewLevel(1, 0));
     }

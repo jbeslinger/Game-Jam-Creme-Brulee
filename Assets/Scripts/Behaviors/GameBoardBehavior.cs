@@ -146,11 +146,30 @@ public class GameBoardBehavior : MonoBehaviour
         }
         else
         {
+#if UNITY_EDITOR
+            try
+            {
+                _currentLevel = (int)SceneManager.SceneArgs["level"];
+                PointsToWin = (int)SceneManager.SceneArgs["win_score"];
+                int hardPieces = (int)SceneManager.SceneArgs["hard_pieces"];
+                GenerateNewBoard(hardPieces);
+                Score = (int)SceneManager.SceneArgs["score_last_game"];
+            }
+            catch
+            {
+                _currentLevel = 1;
+                PointsToWin = 11000;
+                int hardPieces = 0;
+                GenerateNewBoard(hardPieces);
+                Score = 0;
+            }
+#else
             _currentLevel = (int) SceneManager.SceneArgs["level"];
             PointsToWin = (int) SceneManager.SceneArgs["win_score"];
             int hardPieces = (int) SceneManager.SceneArgs["hard_pieces"];
             GenerateNewBoard(hardPieces);
             Score = (int)SceneManager.SceneArgs["score_last_game"];
+#endif
         }
     }
 

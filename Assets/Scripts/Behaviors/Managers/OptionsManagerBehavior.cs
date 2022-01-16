@@ -156,6 +156,7 @@ public class OptionsManagerBehavior : MonoBehaviour
         {
             PlayerPrefs.SetInt("firstTimeSetupFlag", 1);
             SaveOptions();
+            InitHiscoreTable();
         }
         else
         {
@@ -168,6 +169,39 @@ public class OptionsManagerBehavior : MonoBehaviour
         
             Theme = PlayerPrefs.GetInt(nameof(Theme));
         }
+    }
+
+    private static void InitHiscoreTable()
+    {
+        PlayerPrefs.SetString   ("player0Name", "Musab");
+        PlayerPrefs.SetInt      ("player0Score", 100000);
+
+        PlayerPrefs.SetString   ("player1Name", "Brooke");
+        PlayerPrefs.SetInt      ("player1Score", 90000);
+
+        PlayerPrefs.SetString   ("player2Name", "Igor");
+        PlayerPrefs.SetInt      ("player2Score", 80000);
+
+        PlayerPrefs.SetString   ("player3Name", "Konnor");
+        PlayerPrefs.SetInt      ("player3Score", 70000);
+
+        PlayerPrefs.SetString   ("player4Name", "Caitlyn");
+        PlayerPrefs.SetInt      ("player4Score", 60000);
+
+        PlayerPrefs.SetString   ("player5Name", "Waqas");
+        PlayerPrefs.SetInt      ("player5Score", 50000);
+
+        PlayerPrefs.SetString   ("player6Name", "Glenda");
+        PlayerPrefs.SetInt      ("player6Score", 40000);
+
+        PlayerPrefs.SetString   ("player7Name", "Brax");
+        PlayerPrefs.SetInt      ("player7Score", 30000);
+
+        PlayerPrefs.SetString   ("player8Name", "Scott");
+        PlayerPrefs.SetInt      ("player8Score", 20000);
+
+        PlayerPrefs.SetString   ("player9Name", "Jacques");
+        PlayerPrefs.SetInt      ("player9Score", 10000);
     }
     #endregion
 }

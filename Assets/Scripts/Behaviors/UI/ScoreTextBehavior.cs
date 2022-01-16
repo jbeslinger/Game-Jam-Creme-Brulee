@@ -33,7 +33,19 @@ public class ScoreTextBehavior : MonoBehaviour
             throw new MissingReferenceException(string.Format("Please assign the {0} field in the inspector.", nameof(scoreFx)));
         }
 
+#if UNITY_EDITOR
+        try
+        {
+            _currentScore = (int)SceneManager.SceneArgs["score_last_game"];
+        }
+        catch
+        {
+            _currentScore = 0;
+        }
+#else
         _currentScore = (int)SceneManager.SceneArgs["score_last_game"];
+#endif
+
         UpdateUI();
 
         board.OnScoreChange +=
@@ -49,9 +61,9 @@ public class ScoreTextBehavior : MonoBehaviour
                 StartCoroutine(TickScore());
             };
     }
-    #endregion
+#endregion
 
-    #region Methods
+#region Methods
     public void UpdateUI()
     {
         _text.text = string.Format("SCORE: {0:n0}", _currentScore);
@@ -68,5 +80,5 @@ public class ScoreTextBehavior : MonoBehaviour
         _currentScore = _targetScore;
         yield return null;
     }
-    #endregion
+#endregion
 }
